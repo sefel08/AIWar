@@ -1,0 +1,53 @@
+.mainContainer {
+    height: 15%;
+    top: 85%;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-evenly;
+}
+
+.teamContainer {
+    background-color: rgba(0, 0, 0, 0.3);
+    height: 100%;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-content: center;
+    border-top-width: 2px;
+    border-right-width: 2px;
+    border-bottom-width: 2px;
+    border-left-width: 2px;
+    border-left-color: rgb(0, 0, 0);
+    border-right-color: rgb(0, 0, 0);
+    border-top-color: rgb(0, 0, 0);
+    border-bottom-color: rgb(0, 0, 0);
+    overflow: hidden;
+}
+
+.unitContainer {
+    margin-top: 10px;
+    margin-right: 10px;
+    margin-bottom: 10px;
+    margin-left: 10px;
+    flex-basis: auto;
+    height: 30%;
+    max-width: 30%;
+    min-width: 10%;
+    width: auto;
+    flex-grow: 1;
+}
+
+.unitContainer Label {
+    margin-top: 2px;
+    margin-right: 2px;
+    margin-bottom: 2px;
+    margin-left: 2px;
+}
+
+.unitContainer VisualElement {
+    height: 100%;
+    width: 100%;
+    background-color: rgb(64, 255, 0);
+}
