@@ -12,15 +12,9 @@ public class CustomCommand2 : Command
     }
     public override void Update()
     {
-        if(Input.GetKeyDown(KeyCode.Space))
+        foreach(CustomUnit2 unit in units.Values)
         {
-            //get random unit from this command and shoot
-            if (units.Count > 0)
-            {
-                int randomIndex = Random.Range(0, units.Count);
-                Unit randomUnit = units.Values.ElementAt(randomIndex);
-                randomUnit.Shoot();
-            }
+            unit.GetVisibleEnemies();
         }
     }
     public override void ShotHeard(Dictionary<int, Vector2> unitIdsWithDirection)

@@ -672,16 +672,20 @@ MonoBehaviour:
   debugFloat2: 0
   test1: 0
   test2: 0
-  showEnemiesInSight: 1
+  showUnitsFieldOfView: 0
+  showEnemiesInSight: 0
+  showEnemiesInSightBounds: 0
+  showEnemiesInSightBestShootingPoint: 0
   showShootingRays: 0
   showUnitRays: 0
-  regenerateMap: 0
-  rayDuration: 0.5
+  unitRayDuration: 0
+  shootingRayDuration: 0.3
   unitPrefab: {fileID: 3289567134752518329, guid: 595ef0bb464318442a37e2f45142c49e, type: 3}
   projectilePrefab: {fileID: 1719752039792640895, guid: 8351cfe27a80f2f4fbd39d7ac4db4c8c, type: 3}
   hitPrefab: {fileID: 5134019727519298163, guid: 149dac13a62277b4baff7b74a054cd6d, type: 3}
   bloodPrefab: {fileID: 1617851177378732103, guid: 853743b7c764e5b498de1d270aa1b5d5, type: 3}
-  command1UnitCount: 1
+  unlitMaterial: {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
+  command1UnitCount: 9
   command1Color:
     serializedVersion: 2
     key0: {r: 0.4637405, g: 0.3448736, b: 0.4716981, a: 1}
@@ -712,7 +716,7 @@ MonoBehaviour:
     m_ColorSpace: -1
     m_NumColorKeys: 2
     m_NumAlphaKeys: 2
-  command2UnitCount: 1
+  command2UnitCount: 9
   command2Color:
     serializedVersion: 2
     key0: {r: 0, g: 0.36071038, b: 0.6132076, a: 1}
@@ -743,12 +747,12 @@ MonoBehaviour:
     m_ColorSpace: -1
     m_NumColorKeys: 2
     m_NumAlphaKeys: 2
-  MAP_SIZE: 100
+  MAP_SIZE: 200
   ELEMENTS_SPACING: 0
   MIN_ELEMENT_SIZE: 5
   MAX_ELEMENT_SIZE: 15
   MAP_PRECISION: 200
-  START_ZONE_SIZE: 150
+  START_ZONE_SIZE: 230
   ZONE_GROWTH_RATE: 0
   ZONE_DAMAGE: 10
   FIELD_OF_VIEW: 160

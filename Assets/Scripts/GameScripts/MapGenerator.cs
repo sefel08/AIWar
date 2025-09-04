@@ -4,7 +4,12 @@ using UnityEngine;
 
 public class MapGenerator
 {
-    Material mapMaterial = new Material(Shader.Find("Sprites/Default"));
+    Material mapMaterial;
+
+    public MapGenerator(Material mapMaterial)
+    {
+        this.mapMaterial = mapMaterial;
+    }
 
     public (GameMap, GameMapData) GenerateMap(float size, float unitSize, float elementSpacing, int maxNumberOfTrials, float minElementSize, float maxElementSize)
     {

@@ -18,16 +18,21 @@ public class GameManager : MonoBehaviour
     [Header("Debug tools")]
     public bool showUnitsFieldOfView;
     public bool showEnemiesInSight;
+    public bool showEnemiesInSightBounds;
+    public bool showEnemiesInSightBestShootingPoint;
     public bool showShootingRays;
     public bool showUnitRays;
-    [SerializeField] bool regenerateMap;
-    [Min(0.01f)]
-    public float rayDuration; // how long the debug rays will be visible in seconds
+    [Min(0f)]
+    public float unitRayDuration; // how long debug unit rays will be visible in seconds
+    [Min(0f)]
+    public float shootingRayDuration; // how long debug shooting rays will be visible in seconds
     [Header("Prefabs")]
     [SerializeField] GameObject unitPrefab;
     public GameObject projectilePrefab;
     public GameObject hitPrefab;
     public GameObject bloodPrefab;
+    [Header("Materials")]
+    [SerializeField] private Material unlitMaterial;
     [Space(10)]
     [Header("Game Settings")]
     [Header("Commands Settings")]
@@ -57,8 +62,6 @@ public class GameManager : MonoBehaviour
     [HideInInspector]
     public float zoneSize;
     
-    private Material unitMaterial;
-
     UnitManager unitManager;
     UIManager uiManager;
     CameraManager cameraManager;
@@ -79,12 +82,11 @@ public class GameManager : MonoBehaviour
     void Start()
     {
         UNIT_SIZE = unitPrefab.transform.localScale.x / 2f;
-        unitMaterial = new Material(Shader.Find("Sprites/Default"));
 
         uiManager = new UIManager(uiDocument);
         unitManager = new UnitManager(this, uiManager);
         cameraManager = new CameraManager(unitManager, Camera.main, MAP_SIZE);
-        mapGenerator = new MapGenerator();
+        mapGenerator = new MapGenerator(unlitMaterial);
 
         var data = mapGenerator.GenerateMap(MAP_SIZE, UNIT_SIZE * 2, ELEMENTS_SPACING, MAP_PRECISION, MIN_ELEMENT_SIZE, MAX_ELEMENT_SIZE);
         gameMap = data.Item1; //get the game map
@@ -94,15 +96,6 @@ public class GameManager : MonoBehaviour
     }
     void Update()
     {
-        if (regenerateMap)
-        {
-            mapGenerator.ClearMap(gameMapData); //clear the map
-            var data = mapGenerator.GenerateMap(MAP_SIZE, UNIT_SIZE * 2, ELEMENTS_SPACING, MAP_PRECISION, MIN_ELEMENT_SIZE, MAX_ELEMENT_SIZE);
-            gameMap = data.Item1; //get the game map
-            gameMapData = data.Item2; //get the game map data
-            regenerateMap = false; //reset the flag
-        }
-
         zoneSize -= ZONE_GROWTH_RATE * Time.deltaTime; //reduce the zone size
 
         unitManager.DamageUnitsOutOfZone(zoneSize, ZONE_DAMAGE);
@@ -150,7 +143,7 @@ public class GameManager : MonoBehaviour
             rigidbody.linearDamping = 10f;
             
             SpriteRenderer spriteRenderer = gameObject.GetComponent<SpriteRenderer>();
-            spriteRenderer.material = unitMaterial;
+            spriteRenderer.material = unlitMaterial;
             spriteRenderer.color = unitColor;
 
             CustomUnit unit = (CustomUnit)Activator.CreateInstance(typeof(CustomUnit), unitManager, teamId, unitId, command);

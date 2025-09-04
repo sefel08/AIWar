@@ -13,7 +13,7 @@ public class CameraManager
 
     const float minCameraSize = 35f; // Minimum camera size to prevent zooming out too far
     const float UIPercentage = 0.15f; // Percentage of camera size reserved for UI
-    const float edgeDistanceFactor = 0.15f; // Factor to determine distance from edges to seen units
+    const float edgeDistanceFactor = 0.1f; // Factor to determine distance from edges to seen units
     const float lerpSpeed = 0.05f; // Speed of camera movement and size adjustment
 
     public CameraManager(UnitManager unitManager, Camera camera, float mapSize)
@@ -25,6 +25,10 @@ public class CameraManager
 
     public void UpdateCameraPosition()
     {
+        float cameraSize = camera.orthographicSize;
+        float edgeDistance = edgeDistanceFactor * cameraSize;
+        float UISize = cameraSize * UIPercentage;
+
         float maxY;
         float minY;
         float maxX;
@@ -34,7 +38,7 @@ public class CameraManager
 
         if (allUnits.Count <= 0)
         {
-            targetPosition = new Vector3(0, 0, -10f);
+            targetPosition = new Vector3(0, 0 - UISize, -10f);
             targetSize = mapSize;
             MoveCamera();
             return;
@@ -61,9 +65,6 @@ public class CameraManager
             if (unitPosition.x < minX) minX = unitPosition.x;
         }
 
-        float edgeDistance = camera.orthographicSize * edgeDistanceFactor;
-        float UISize = camera.orthographicSize * UIPercentage;
-
         float centerY = ((maxY + minY) / 2f) - UISize;
         float centerX = (maxX + minX) / 2f;
 
@@ -77,7 +78,8 @@ public class CameraManager
     }
     private void MoveCamera()
     {
-        camera.transform.position = Vector3.Lerp(camera.transform.position, targetPosition, Time.deltaTime * (camera.orthographicSize * lerpSpeed));
-        camera.orthographicSize = Mathf.Lerp(camera.orthographicSize, targetSize, Time.deltaTime * (camera.orthographicSize * lerpSpeed));
+        float cameraSize = camera.orthographicSize;
+        camera.transform.position = Vector3.Lerp(camera.transform.position, targetPosition, Time.deltaTime * (cameraSize * lerpSpeed));
+        camera.orthographicSize = Mathf.Lerp(cameraSize, targetSize, Time.deltaTime * (cameraSize * lerpSpeed));
     }
 }

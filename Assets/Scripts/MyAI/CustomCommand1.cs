@@ -15,42 +15,17 @@ public class CustomCommand1 : Command
         {
             UnitInfo info = unit.Info;
 
-            if (Input.GetKey(KeyCode.W))
-            {
-                unit.Move(info.direction); // Move forward
-            }
-            if (Input.GetKey(KeyCode.S))
-            {
-                unit.Move(-info.direction); // Move backward
-            }
-            if (Input.GetKey(KeyCode.A))
-            {
-                Vector2 leftDirection = new Vector2(-info.direction.y, info.direction.x); // Perpendicular left
-                unit.Move(leftDirection);
-            }
-            if (Input.GetKey(KeyCode.D))
-            {
-                Vector2 rightDirection = new Vector2(info.direction.y, -info.direction.x); // Perpendicular right
-                unit.Move(rightDirection);
-            }
+            Vector2 moveDirection = ((Input.GetAxis("Horizontal") * Vector2.right) +
+                                    (Input.GetAxis("Vertical") * Vector2.up)).normalized;
 
-            // Add rotation with Q and E
-            if (Input.GetKey(KeyCode.Q))
-            {
-                unit.Rotate(false); // Rotate counterclockwise
-            }
-            if (Input.GetKey(KeyCode.E))
-            {
-                unit.Rotate(true); // Rotate clockwise
-            }
+            if (moveDirection != Vector2.zero) unit.Move(moveDirection);
 
-            // Add shooting with space
-            if (Input.GetKey(KeyCode.Space))
-            {
-                unit.Shoot();
-            }
+            //Rotate towards mouse position
+            Vector2 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            Vector2 directionToMouse = (mousePosition - info.position).normalized;
+            if (directionToMouse != Vector2.zero && Input.GetMouseButton(0)) unit.RotateTowards(directionToMouse);
 
-            Debug.Log(unit.IsDirectionInFieldOfView(Vector2.left));
+            if(Input.GetMouseButton(1)) unit.Shoot();
         }
     }
     public override void ShotHeard(Dictionary<int, Vector2> unitIdsWithDirection)

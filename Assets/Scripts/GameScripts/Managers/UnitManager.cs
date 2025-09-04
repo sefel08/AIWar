@@ -266,15 +266,8 @@ public class UnitManager
             }
         }
 
-        // Debug  
-        if (gameManager.showEnemiesInSight)
-            foreach (var enemyData in enemiesInSight)
-            {
-                Debug.DrawLine(unitData.Position, enemyData.position, Color.blue);
-                Debug.DrawLine(unitData.Position, enemyData.bestShootingPosition, Color.cyan);
-            }
-
         return enemiesInSight;
+
 
         Vector2? GetVisibleEnemyPoint(UnitData enemyData, GameObject enemyGameObject)
         {
@@ -283,37 +276,73 @@ public class UnitManager
             Vector2 direction = (enemyPosition - unitPosition).normalized;
             Vector2 unitDirection = unitData.Direction;
 
-            //if the enemy center is visible, return it
-            if (IsPointInUnitFieldOfView(unitPosition, unitDirection, enemyPosition) && IsPointVisible(enemyPosition))
-                return enemyPosition;
-
             Vector2 rightPoint = enemyPosition + new Vector2(-direction.y, direction.x) * (UNIT_SIZE - 0.01f);
             Vector2 leftPoint = enemyPosition + new Vector2(direction.y, -direction.x) * (UNIT_SIZE - 0.01f);
 
-            float rightPointDistance = 0; //represents how close to center of enemy the right point is
-            float leftPointDistance = 0; //represents how close to center of enemy the left point is
+            bool isRightPointVisible = IsPointInUnitFieldOfView(unitPosition, unitDirection, rightPoint) && IsPointVisible(rightPoint);
+            bool isLeftPointVisible = IsPointInUnitFieldOfView(unitPosition, unitDirection, leftPoint) && IsPointVisible(leftPoint);
+            bool isCenterPointVisible = IsPointInUnitFieldOfView(unitPosition, unitDirection, enemyPosition) && IsPointVisible(enemyPosition);
 
-            //test right point
-            if (IsPointInUnitFieldOfView(unitPosition, unitDirection, rightPoint) && IsPointVisible(rightPoint))
+            if (!isRightPointVisible && !isLeftPointVisible && !isCenterPointVisible) return null; //if none of the points are visible, return null
+
+            if (isCenterPointVisible)
             {
-                rightPoint = GetPointCloserToCenter(rightPoint, out rightPointDistance); //move point as close to the middle
+                // if none of the points are visible, move both points farther to the edges
+                if (!isRightPointVisible && !isLeftPointVisible)
+                {
+                    rightPoint = GetPointFartherToCenter(rightPoint);
+                    leftPoint = GetPointFartherToCenter(leftPoint);
+                }
+                else
+                // if only one point is visible, move the other point farther to the center
+                {
+                    if (isRightPointVisible)
+                        leftPoint = GetPointFartherToCenter(leftPoint);
+                    else rightPoint = GetPointFartherToCenter(rightPoint);
+                }
+            }
+            else
+            {
+                //if both points are visible, move both points closer to the center
+                if (isRightPointVisible && isLeftPointVisible)
+                {
+                    Vector2 closerRightPoint = GetPointCloserToCenter(rightPoint);
+                    Vector2 closerLeftPoint = GetPointCloserToCenter(leftPoint);
+                    //check wchich point is closer to the center and move the other one
+                    if (Vector2.Distance(closerRightPoint, enemyPosition) < Vector2.Distance(closerLeftPoint, enemyPosition))
+                        leftPoint = closerRightPoint;
+                    else rightPoint = closerLeftPoint;
+                }
+                else if (isRightPointVisible)
+                {
+                    //if only right point is visible, move left point closer to the center
+                    leftPoint = GetPointCloserToCenter(rightPoint);
+                }
+                else
+                {
+                    //if only left point is visible, move right point closer to the center
+                    rightPoint = GetPointCloserToCenter(leftPoint);
+                }
             }
 
-            //test left point
-            if (IsPointInUnitFieldOfView(unitPosition, unitDirection, leftPoint) && IsPointVisible(leftPoint))
+            // Debug  
+            if (gameManager.showEnemiesInSight)
             {
-                leftPoint = GetPointCloserToCenter(leftPoint, out leftPointDistance); //move point as close to the middle
+                Vector2 debugDirection = (enemyPosition - unitPosition).normalized;
+                float debugDistance = Vector2.Distance(unitPosition, enemyPosition);
+                Debug.DrawLine(unitPosition, unitPosition + (debugDirection * (debugDistance - UNIT_SIZE)), Color.cyan);
             }
+            if (gameManager.showEnemiesInSightBounds)
+            {
+                Debug.DrawLine(unitPosition, rightPoint, Color.yellow);
+                Debug.DrawLine(unitPosition, leftPoint, Color.yellow);
+            }
+            if (gameManager.showEnemiesInSightBestShootingPoint)
+                Debug.DrawLine(unitPosition, (leftPoint + rightPoint) / 2, Color.red);
 
-            if (rightPointDistance > 0 && rightPointDistance > leftPointDistance)
-                return rightPoint; //return the point that is closer to the center of the enemy
-            else if (leftPointDistance > 0 && leftPointDistance > rightPointDistance)
-                return leftPoint; //return the point that is closer to the center of the enemy
+            return (leftPoint + rightPoint) / 2; //return avarage of both points as the best shooting position
 
-            //cant see enemy
-            return null;
-
-            Vector2 GetPointCloserToCenter(Vector2 startPoint, out float distanceToCenter)
+            Vector2 GetPointCloserToCenter(Vector2 startPoint)
             {
                 Vector2 result = startPoint;
 
@@ -335,7 +364,29 @@ public class UnitManager
                     }
                 }
 
-                distanceToCenter = Vector2.Distance(result, enemyPosition);
+                return result;
+            }
+            Vector2 GetPointFartherToCenter(Vector2 targetPoint)
+            {
+                Vector2 result = enemyPosition;
+
+                Vector2 leftPoint = enemyPosition;
+                Vector2 rightPoint = targetPoint;
+
+                for (int i = 1; i < gameManager.ENEMY_POINT_PRECISION; i++)
+                {
+                    Vector2 middlePoint = (leftPoint + rightPoint) / 2;
+                    //test if the middle point is visible
+                    if (IsPointInUnitFieldOfView(unitData, middlePoint) && IsPointVisible(middlePoint))
+                    {
+                        result = middlePoint; //update the result to the middle point
+                        leftPoint = middlePoint; //move the point closer to edge
+                    }
+                    else
+                    {
+                        rightPoint = middlePoint; //move the point closer to the center
+                    }
+                }
 
                 return result;
             }
@@ -366,7 +417,7 @@ public class UnitManager
 
         //debug
         if (gameManager.showShootingRays && hit.collider != null)
-            Debug.DrawLine(unitPosition + direction * (UNIT_SIZE + 0.01f), hit.point, Color.yellow, gameManager.rayDuration);
+            Debug.DrawLine(unitPosition + direction * (UNIT_SIZE + 0.01f), hit.point, Color.yellow, gameManager.shootingRayDuration);
 
         // Get projectile from the pool
         PoolObject<ProjectileScript> projectilePoolObject = projectilePool.GetObjectFromPool();
@@ -417,9 +468,9 @@ public class UnitManager
         if (gameManager.showUnitRays)
         {
             if (hit.collider == null)
-                Debug.DrawLine(unitPosition + direction * (UNIT_SIZE + 0.01f), unitPosition + direction * (UNIT_SIZE + 0.01f) + (direction * gameManager.MAP_SIZE), Color.magenta, gameManager.rayDuration);
+                Debug.DrawLine(unitPosition + direction * (UNIT_SIZE + 0.01f), unitPosition + direction * (UNIT_SIZE + 0.01f) + (direction * gameManager.MAP_SIZE * 3f), Color.magenta, gameManager.unitRayDuration);
             else
-                Debug.DrawLine(unitPosition + direction * (UNIT_SIZE + 0.01f), hit.point, Color.magenta, gameManager.rayDuration);
+                Debug.DrawLine(unitPosition + direction * (UNIT_SIZE + 0.01f), hit.point, Color.magenta, gameManager.unitRayDuration);
         }
 
         HitType hitType = GetHitType(hit, unit);
@@ -443,9 +494,9 @@ public class UnitManager
         if (gameManager.showUnitRays)
         {
             if (hit.collider == null)
-                Debug.DrawLine(unitPosition + direction * (UNIT_SIZE + 0.01f), unitPosition + direction * (UNIT_SIZE + 0.01f) + (direction * distance), Color.magenta, gameManager.rayDuration);
+                Debug.DrawLine(unitPosition + direction * (UNIT_SIZE + 0.01f), unitPosition + direction * (UNIT_SIZE + 0.01f) + (direction * distance), Color.magenta, gameManager.unitRayDuration);
             else
-                Debug.DrawLine(unitPosition + direction * (UNIT_SIZE + 0.01f), hit.point, Color.magenta, gameManager.rayDuration);
+                Debug.DrawLine(unitPosition + direction * (UNIT_SIZE + 0.01f), hit.point, Color.magenta, gameManager.unitRayDuration);
         }
 
         HitType hitType = GetHitType(hit, unit);
@@ -544,6 +595,7 @@ public class UnitManager
     }
     private bool IsNormalized(Vector2 direction)
     {
+        if(direction == Vector2.zero) return false;
         return Mathf.Abs(direction.magnitude - 1f) < 1e-5f;
     }
 

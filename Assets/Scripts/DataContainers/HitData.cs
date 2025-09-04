@@ -14,4 +14,8 @@ public class HitData
         this.hitNormal = hitNormal;
         this.elementId = elementId;
     }
+    public override string ToString()
+    {
+        return $"HitPoint: {hitPoint}, HitDistance: {hitDistance}, HitNormal: {hitNormal}, ElementId: {elementId}";
+    }
 }
