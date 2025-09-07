@@ -11,21 +11,20 @@ public class MapGenerator
         this.mapMaterial = mapMaterial;
     }
 
-    public (GameMap, GameMapData) GenerateMap(float size, float unitSize, float elementSpacing, int maxNumberOfTrials, float minElementSize, float maxElementSize)
+    public (GameMap, GameMapData) GenerateMap(float size, float unitSize, float elementSpacing, int maxNumberOfTrials, float minElementSize, float maxElementSize, Gradient mapColor)
     {
         GameMap gameMap = new GameMap();
         GameMapData gameMapData = new GameMapData(new GameObject("Map"));
 
         int elementNumber = 1;
-
         int numberOfTrials = 0;
         while (numberOfTrials < maxNumberOfTrials)
         {
-            GameObject gameObject = CreateRandomGameObject(gameMapData.mapContainer.transform, minElementSize, maxElementSize, out PolygonCollider2D collider);
+            Color objectColor = mapColor.Evaluate(Random.Range(0f, 1f));
+            GameObject gameObject = CreateRandomGameObject(gameMapData.mapContainer.transform, minElementSize, maxElementSize, objectColor, out PolygonCollider2D collider);
 
             //move gameObject to a random position within the map size
             gameObject.transform.position = new Vector3(Random.Range(-size / 2, size / 2), Random.Range(-size / 2, size / 2), 0);
-            //yield return null;
 
             Transform transform = gameObject.transform;
             List<Vector2> points = new List<Vector2>();
@@ -63,9 +62,10 @@ public class MapGenerator
             elementNumber++;
             numberOfTrials = 0;
         }
+
         return (gameMap, gameMapData);
     }
-    public GameObject CreateRandomGameObject(Transform parent, float minElementSize, float maxElementSize, out PolygonCollider2D collider)
+    public GameObject CreateRandomGameObject(Transform parent, float minElementSize, float maxElementSize, Color objectColor, out PolygonCollider2D collider)
     {
         GameObject mapElementGameObject = new GameObject("MapElement");
         mapElementGameObject.transform.SetParent(parent, true);
@@ -75,7 +75,8 @@ public class MapGenerator
         Rigidbody2D rigidbody = mapElementGameObject.AddComponent<Rigidbody2D>();
 
         rigidbody.bodyType = RigidbodyType2D.Static;
-        meshRenderer.material = mapMaterial;
+        meshRenderer.material = new Material(mapMaterial);
+        meshRenderer.material.color = objectColor;
 
         Mesh mesh = new Mesh();
 
@@ -131,9 +132,5 @@ public class MapGenerator
         meshFilter.mesh = mesh;
 
         return mapElementGameObject;
-    }
-    public void ClearMap(GameMapData gameMapData)
-    {
-        Object.Destroy(gameMapData.mapContainer);
     }
 }

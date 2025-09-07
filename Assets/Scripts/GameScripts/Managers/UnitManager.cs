@@ -86,7 +86,7 @@ public class UnitManager
             foreach (UnitData unitData in commandData.unitDataList.Values)
             {
                 // Add zone damage to the unit if it is inside the zone
-                if (Vector2.Distance(unitData.Position, Vector2.zero) > zoneSize / 2f)
+                if (Vector2.Distance(unitData.Position, Vector2.zero) > zoneSize)
                 {
                     DamageUnit(unitData, zoneDamage * Time.deltaTime); //apply damage to the unit
                 }
@@ -143,7 +143,7 @@ public class UnitManager
     }
     public float GetUnitZoneDistance(Unit unit)
     {
-        return gameManager.zoneSize / 2f - Vector2.Distance(GetUnitPosition(unit), Vector2.zero);
+        return gameManager.zoneSize - Vector2.Distance(GetUnitPosition(unit), Vector2.zero);
     }
     public bool GetUnitHasMoved(Unit unit)
     {

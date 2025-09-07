@@ -7,7 +7,7 @@ using Random = UnityEngine.Random;
 public class ProjectileScript : MonoBehaviour
 {
     private const float POINT_DISTANCE_MODIFIER = 8f; // Modifier for distance between points in the path
-    private const int PROJECTILE_SPEED = 300; // Speed of the projectile
+    private const int PROJECTILE_SPEED = 500; // Speed of the projectile
 
     private List<Vector2> path = new List<Vector2>();
     private Action returnProjectile;

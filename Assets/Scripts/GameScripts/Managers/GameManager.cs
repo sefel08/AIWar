@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -31,8 +32,10 @@ public class GameManager : MonoBehaviour
     public GameObject projectilePrefab;
     public GameObject hitPrefab;
     public GameObject bloodPrefab;
+    [SerializeField] GameObject zonePrefab;
     [Header("Materials")]
     [SerializeField] private Material unlitMaterial;
+    [SerializeField] private Material zoneMaterial;
     [Space(10)]
     [Header("Game Settings")]
     [Header("Commands Settings")]
@@ -46,6 +49,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private float MIN_ELEMENT_SIZE; // minimum size of the map element, used to generate the map
     [SerializeField] private float MAX_ELEMENT_SIZE; // maximum size of the map element, used to generate the map
     [SerializeField] private int MAP_PRECISION; // how many tries will be used to generate the map, the higher the value, the more detailed the map will be
+    [SerializeField] private Gradient mapColor; // color of the map elements
     [Header("Zone Settings")]
     [SerializeField] private float START_ZONE_SIZE; // initial value of the zone
     [SerializeField] private float ZONE_GROWTH_RATE; // how much the zone will grow each second, used to make the game more dynamic and force players to move towards the center of the map
@@ -69,6 +73,9 @@ public class GameManager : MonoBehaviour
     GameMap gameMap;
     public GameMapData gameMapData;
 
+    private GameObject zoneGameObject;
+    bool gameInitialized = false;
+
     private void OnValidate()
     {
         DebugVariables.testInt1 = debugInt1;
@@ -88,7 +95,7 @@ public class GameManager : MonoBehaviour
         cameraManager = new CameraManager(unitManager, Camera.main, MAP_SIZE);
         mapGenerator = new MapGenerator(unlitMaterial);
 
-        var data = mapGenerator.GenerateMap(MAP_SIZE, UNIT_SIZE * 2, ELEMENTS_SPACING, MAP_PRECISION, MIN_ELEMENT_SIZE, MAX_ELEMENT_SIZE);
+        var data = mapGenerator.GenerateMap(MAP_SIZE, UNIT_SIZE * 2, ELEMENTS_SPACING, MAP_PRECISION, MIN_ELEMENT_SIZE, MAX_ELEMENT_SIZE, mapColor);
         gameMap = data.Item1; //get the game map
         gameMapData = data.Item2; //get the game map data
 
@@ -96,7 +103,10 @@ public class GameManager : MonoBehaviour
     }
     void Update()
     {
+        if (gameInitialized == false) return;
+
         zoneSize -= ZONE_GROWTH_RATE * Time.deltaTime; //reduce the zone size
+        zoneMaterial.SetFloat("_ZoneSize", zoneSize);
 
         unitManager.DamageUnitsOutOfZone(zoneSize, ZONE_DAMAGE);
         unitManager.UpdateCommands();
@@ -110,9 +120,14 @@ public class GameManager : MonoBehaviour
         CreateCommand<CustomUnit1, CustomCommand1>(1, unitPrefab, command1UnitCount, gameMap, new Vector2(0, MAP_SIZE / 2f + 5f), command1Color);
         CreateCommand<CustomUnit2, CustomCommand2>(2, unitPrefab, command2UnitCount, gameMap, new Vector2(0, -MAP_SIZE / 2f - 5f), command2Color);
         
+        zoneGameObject = Instantiate(zonePrefab, new Vector3(0f, 0f, -9f), Quaternion.Euler(-90, 0, 0));
+        zoneGameObject.transform.localScale = new Vector3(MAP_SIZE * 0.5f, 1, MAP_SIZE * 0.5f);
         zoneSize = START_ZONE_SIZE; //set the initial zone size
+        zoneMaterial.SetFloat("_ZoneSize", zoneSize);
 
         unitManager.StartCommands();
+
+        gameInitialized = true;
     }
     private void CreateCommand<CustomUnit, CustomCommand>(int teamId, GameObject unitPrefab, int numberOfUnits, GameMap map, Vector2 spawnLocation, Gradient teamColor)
         where CustomUnit : Unit
@@ -170,6 +185,6 @@ public class GameManager : MonoBehaviour
         Gizmos.DrawWireCube(Vector3.zero, new Vector3(MAP_SIZE, MAP_SIZE, 0));
         // Draw the zone size
         Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(Vector3.zero, zoneSize / 2f);
+        Gizmos.DrawWireSphere(Vector3.zero, zoneSize);
     }
 }
