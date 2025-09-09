@@ -8,7 +8,7 @@ using Random = UnityEngine.Random;
 
 public class UnitManager
 {
-    Dictionary<int, (Command, CommandData)> commands;
+    Dictionary<int, (ICommand, CommandData)> commands;
     Dictionary<GameObject, UnitData> gameObjectUnitDataDictionary; // maps game objects to units, used to find units by their game object
     //int - command id, int - unit id
     List<(int, int)> unitsToRemove;
@@ -46,7 +46,7 @@ public class UnitManager
         UNIT_SIZE = gameManager.UNIT_SIZE;
     }
 
-    public void AddCommand(int teamId, Command command, CommandData commandData)
+    public void AddCommand(int teamId, ICommand command, CommandData commandData)
     {
         commands.Add(teamId, (command, commandData));
     }
@@ -93,18 +93,18 @@ public class UnitManager
             }
         }
     }
-    public void DeleteDeadUnits()
+    public void RemoveDeadUnits()
     {
         foreach (var commandUnitId in unitsToRemove)
         {
             var commandObjects = commands[commandUnitId.Item1];
-            Command command = commandObjects.Item1;
+            ICommand command = commandObjects.Item1;
             CommandData commandData = commandObjects.Item2;
 
             if (!commandData.unitDataList.TryGetValue(commandUnitId.Item2, out UnitData unitData))
                 continue; //unit data not found, because it was already removed. Two or more bullets hit the same unit at the same time
 
-            Unit unit = unitData.unit;
+            IUnit unit = unitData.unit;
 
             //remove unit from UI
             uiManager.RemoveUnitContainer(unit.TeamId, unit.UnitId);
@@ -112,8 +112,9 @@ public class UnitManager
             //run unit's death function
             unit.OnUnitDeath();
 
-            //remove unit from the command's units list
-            command.units.Remove(unit.UnitId);
+            ////remove unit from the command's units list
+            //command.units.Remove(unit.UnitId);
+
             //remove unit from the command's unit data list
             commandData.unitDataList.Remove(commandUnitId.Item2);
             //remove unit from the unit game objects dictionary
@@ -129,37 +130,47 @@ public class UnitManager
     }
 
     // Getters for Unit class
-    public UnitInfo GetUnitInfo(Unit unit)
+    public UnitInfo GetUnitInfo(IUnit unit)
     {
-        return new UnitInfo(GetUnitData(unit));
+        if (IsUnitAlive(unit))
+        {
+            UnitData unitData = GetUnitData(unit);
+            return new UnitInfo(unitData, GetUnitZoneDistance(unitData));
+        }
+        else
+            return new UnitInfo(false);
     }
-    public Vector2 GetUnitPosition(Unit unit)
+    public Vector2 GetUnitPosition(IUnit unit)
     {
         return GetUnitData(unit).Position;
     }
-    public Quaternion GetUnitRotation(Unit unit)
+    public Quaternion GetUnitRotation(IUnit unit)
     {
         return GetUnitData(unit).Rotation;
     }
-    public float GetUnitZoneDistance(Unit unit)
+    public float GetUnitZoneDistance(IUnit unit)
     {
         return gameManager.zoneSize - Vector2.Distance(GetUnitPosition(unit), Vector2.zero);
     }
-    public bool GetUnitHasMoved(Unit unit)
+    public bool GetUnitHasMoved(IUnit unit)
     {
         return GetUnitData(unit).hasMoved;
     }
-    public bool GetUnitHasRotated(Unit unit)
+    public bool GetUnitHasRotated(IUnit unit)
     {
         return GetUnitData(unit).hasRotated;
     }
-    public float GetUnitHealth(Unit unit)
+    public float GetUnitHealth(IUnit unit)
     {
         return GetUnitData(unit).health;
     }
+    public bool IsUnitAlive(IUnit unit)
+    {
+        return commands[unit.TeamId].Item2.unitDataList.TryGetValue(unit.UnitId, out UnitData data);
+    }
 
     // Actions for Unit class
-    public bool MoveUnitInDirection(Unit unit, Vector2 direction)
+    public bool MoveUnitInDirection(IUnit unit, Vector2 direction)
     {
         if (!IsNormalized(direction)) throw new ArgumentException("Direction must be normalized");
 
@@ -173,7 +184,7 @@ public class UnitManager
         unitData.rigidbody.MovePosition(newPosition);
         return true;
     }
-    public bool MoveUnitTowards(Unit unit, Vector2 targetPosition)
+    public bool MoveUnitTowards(IUnit unit, Vector2 targetPosition)
     {
         UnitData unitData = GetUnitData(unit);
 
@@ -186,7 +197,7 @@ public class UnitManager
         unitData.rigidbody.MovePosition(newPosition);
         return true;
     }
-    public bool RotateUnitTowards(Unit unit, Quaternion targetRotation)
+    public bool RotateUnitTowards(IUnit unit, Quaternion targetRotation)
     {
         UnitData unitData = GetUnitData(unit);
 
@@ -196,7 +207,7 @@ public class UnitManager
         unitData.rigidbody.MoveRotation(Quaternion.RotateTowards(unitData.Rotation, targetRotation, TURN_SPEED * Time.fixedDeltaTime));
         return true;
     }
-    public bool RotateUnitTowards(Unit unit, Vector2 direction)
+    public bool RotateUnitTowards(IUnit unit, Vector2 direction)
     {
         if (!IsNormalized(direction)) throw new ArgumentException("Direction must be normalized");
 
@@ -210,7 +221,7 @@ public class UnitManager
         unitData.rigidbody.MoveRotation(Quaternion.RotateTowards(unitData.Rotation, targetRotation, TURN_SPEED * Time.fixedDeltaTime));
         return true;
     }
-    public bool RotateUnitTowardsPoint(Unit unit, Vector2 targetPosition)
+    public bool RotateUnitTowardsPoint(IUnit unit, Vector2 targetPosition)
     {
         UnitData unitData = GetUnitData(unit);
 
@@ -223,7 +234,7 @@ public class UnitManager
         unitData.rigidbody.MoveRotation(Quaternion.RotateTowards(unitData.Rotation, targetRotation, TURN_SPEED * Time.fixedDeltaTime));
         return true;
     }
-    public bool RotateUnit(Unit unit, bool clockwise)
+    public bool RotateUnit(IUnit unit, bool clockwise)
     {
         UnitData unitData = GetUnitData(unit);
 
@@ -241,7 +252,7 @@ public class UnitManager
         unitData.rigidbody.MoveRotation(Quaternion.RotateTowards(rotation, targetRotation, Mathf.Abs(angle)));
         return true;
     }
-    public List<EnemyData> GetEnemiesInSight(Unit unit)
+    public List<EnemyData> GetEnemiesInSight(IUnit unit)
     {
         List<CommandData> enemyCommandDatas = commands
             .Where(pair => pair.Key != unit.TeamId) //filter out own team
@@ -398,7 +409,7 @@ public class UnitManager
             }
         }
     }
-    public void Shoot(Unit unit)
+    public void Shoot(IUnit unit)
     {
         UnitData unitData = GetUnitData(unit);
 
@@ -438,7 +449,7 @@ public class UnitManager
                 return;
             }
 
-            Unit enemy = enemyData.unit;
+            IUnit enemy = enemyData.unit;
 
             //Skip if it is a self hit
             if (enemy == unit) return;
@@ -453,7 +464,7 @@ public class UnitManager
         // Init the projectile script with the start position and a point far away in the direction of the ray
         projectileScript.Init(startPosition + direction * 2f, startPosition + directionWithOffset * PROJECTILE_DISTANCE, projectilePoolObject.ReturnObject);
     }
-    public (HitType, HitData) CastARay(Unit unit, Vector2 direction)
+    public (HitType, HitData) CastARay(IUnit unit, Vector2 direction)
     {
         UnitData unitData = GetUnitData(unit);
 
@@ -477,7 +488,7 @@ public class UnitManager
 
         return (hitType, GetHitData(hit, hitType));
     }
-    public (HitType, HitData) CastARay(Unit unit, Vector2 direction, float distance)
+    public (HitType, HitData) CastARay(IUnit unit, Vector2 direction, float distance)
     {
         if (distance <= 0) throw new ArgumentException("Distance must be greater than 0");
 
@@ -503,7 +514,7 @@ public class UnitManager
 
         return (hitType, GetHitData(hit, hitType));
     }
-    public (HitType, HitData) CastARayTowardsPoint(Unit unit, Vector2 point, bool useDistance)
+    public (HitType, HitData) CastARayTowardsPoint(IUnit unit, Vector2 point, bool useDistance)
     {
         UnitData unitData = GetUnitData(unit);
         Vector2 direction = (point - unitData.Position).normalized;
@@ -514,14 +525,14 @@ public class UnitManager
         }
         return CastARay(unit, direction);
     }
-    public bool IsPointInUnitFieldOfView(Unit unit, Vector2 point)
+    public bool IsPointInUnitFieldOfView(IUnit unit, Vector2 point)
     {
         UnitData unitData = GetUnitData(unit);
         Vector2 direction = (point - unitData.Position).normalized;
         float angle = Vector2.Angle(unitData.Direction, direction);
         return angle < gameManager.FIELD_OF_VIEW / 2;
     }
-    public bool IsDirectionInUnitFieldOfView(Unit unit, Vector2 direction)
+    public bool IsDirectionInUnitFieldOfView(IUnit unit, Vector2 direction)
     {
         if (!IsNormalized(direction)) throw new ArgumentException("Direction must be normalized");
 
@@ -531,7 +542,7 @@ public class UnitManager
     }
 
     // Helper methods
-    private HitType GetHitType(RaycastHit2D hit, Unit unit)
+    private HitType GetHitType(RaycastHit2D hit, IUnit unit)
     {
         if (hit.collider == null) return HitType.None;
         if (!gameObjectUnitDataDictionary.TryGetValue(hit.collider.gameObject, out UnitData enemyData))
@@ -555,7 +566,7 @@ public class UnitManager
     {
         foreach (var pair in commands.Values)
         {
-            if (pair.Item1.teamId == shooter.unit.TeamId) continue; //skip own team  
+            if (pair.Item2.teamId == shooter.unit.TeamId) continue; //skip own team  
 
             Dictionary<int, Vector2> unitIdsWithDirection = new Dictionary<int, Vector2>();
 
@@ -577,9 +588,14 @@ public class UnitManager
             pair.Item1.ShotHeard(unitIdsWithDirection);
         }
     }
-    private UnitData GetUnitData(Unit unit)
+    private UnitData GetUnitData(IUnit unit)
     {
-        return commands[unit.TeamId].Item2.unitDataList[unit.UnitId];
+        UnitData unitData;
+
+        if(!commands[unit.TeamId].Item2.unitDataList.TryGetValue(unit.UnitId, out unitData))
+            throw new Exception("Tried to run unit method on a dead unit");
+        
+        return unitData;
     }
     private void DamageUnit(UnitData unitData, float damage)
     {
@@ -597,6 +613,10 @@ public class UnitManager
     {
         if(direction == Vector2.zero) return false;
         return Mathf.Abs(direction.magnitude - 1f) < 1e-5f;
+    }
+    private float GetUnitZoneDistance(UnitData unitData)
+    {
+        return gameManager.zoneSize - Vector2.Distance(unitData.Position, Vector2.zero);
     }
 
     //more optimized methods for unit field of view used in GetEnemiesInSight. Gets the unit position faster.

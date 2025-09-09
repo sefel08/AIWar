@@ -10,7 +10,9 @@ public class UnitInfo
     public bool hasRotated;
     public float zoneDistance;
 
-    public UnitInfo(UnitData unitData)
+    public bool isAlive;
+
+    public UnitInfo(UnitData unitData, float zoneDistance)
     {
         this.position = unitData.Position;
         this.rotation = unitData.Rotation;
@@ -18,7 +20,13 @@ public class UnitInfo
         this.health = unitData.health;
         this.hasMoved = unitData.hasMoved;
         this.hasRotated = unitData.hasRotated;
-        this.zoneDistance = unitData.unit.ZoneDistance;
+        this.zoneDistance = zoneDistance;
+        this.isAlive = unitData.isAlive;
+    }
+
+    public UnitInfo(bool isAlive)
+    {
+        this.isAlive = isAlive;
     }
 }
 

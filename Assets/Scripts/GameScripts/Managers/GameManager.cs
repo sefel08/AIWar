@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -110,7 +111,7 @@ public class GameManager : MonoBehaviour
 
         unitManager.DamageUnitsOutOfZone(zoneSize, ZONE_DAMAGE);
         unitManager.UpdateCommands();
-        unitManager.DeleteDeadUnits();
+        unitManager.RemoveDeadUnits();
 
         cameraManager.UpdateCameraPosition();
     }
@@ -130,11 +131,12 @@ public class GameManager : MonoBehaviour
         gameInitialized = true;
     }
     private void CreateCommand<CustomUnit, CustomCommand>(int teamId, GameObject unitPrefab, int numberOfUnits, GameMap map, Vector2 spawnLocation, Gradient teamColor)
-        where CustomUnit : Unit
-        where CustomCommand : Command
+        where CustomUnit : Unit<CustomUnit>
+        where CustomCommand : Command<CustomUnit>, ICommand
     {
         //create command
-        CustomCommand command = (CustomCommand)Activator.CreateInstance(typeof(CustomCommand), teamId, new GameMap(map));
+        CustomCommand command = (CustomCommand)Activator.CreateInstance(typeof(CustomCommand));
+        command.gameMap = new GameMap(map); //give a copy of the map to the command
         CommandData commandData = new CommandData(teamId);
 
         GameObject parent = new GameObject("Command" + teamId);
@@ -142,7 +144,6 @@ public class GameManager : MonoBehaviour
         uiManager.CreateTeamContainer(teamId);
 
         //create units
-        List<CustomUnit> units = new List<CustomUnit>();
         for (int unitId = 0; unitId < numberOfUnits; unitId++)
         {
             Color unitColor = teamColor.Evaluate((float)unitId / numberOfUnits);
@@ -161,7 +162,18 @@ public class GameManager : MonoBehaviour
             spriteRenderer.material = unlitMaterial;
             spriteRenderer.color = unitColor;
 
-            CustomUnit unit = (CustomUnit)Activator.CreateInstance(typeof(CustomUnit), unitManager, teamId, unitId, command);
+            CustomUnit unit = (CustomUnit)Activator.CreateInstance(typeof(CustomUnit));
+            unit.command = command;
+
+            //set all private fields using reflection
+            FieldInfo field = unit.GetType().BaseType.GetField("unitManager", BindingFlags.NonPublic | BindingFlags.Instance);
+            field?.SetValue(unit, unitManager);
+            PropertyInfo property = unit.GetType().BaseType.GetProperty("UnitId", BindingFlags.Public | BindingFlags.Instance);
+            property?.SetValue(unit, unitId);
+            property = unit.GetType().BaseType.GetProperty("TeamId", BindingFlags.Public | BindingFlags.Instance);
+            property?.SetValue(unit, teamId);
+
+
             UnitData unitData = new UnitData(unit, rigidbody, gameObject);
 
             //add unit to command

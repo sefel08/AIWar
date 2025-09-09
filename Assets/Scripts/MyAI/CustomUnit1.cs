@@ -1,9 +1,7 @@
 ﻿using UnityEngine;
 
-public class CustomUnit1 : Unit
+public class CustomUnit1 : Unit<CustomUnit1>
 {
-    public CustomUnit1(UnitManager unitManager, int teamId, int unitId, Command command) : base(unitManager, teamId, unitId, command) { }
-
     public Vector2 targetDirection;
 
     public override void OnUnitDeath()

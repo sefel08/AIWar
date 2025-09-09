@@ -1,19 +1,22 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class CustomCommand1 : Command
+public class CustomCommand1 : Command<CustomUnit1>, ICommand
 {
-    public CustomCommand1(int teamId, GameMap gameMap) : base(teamId, gameMap) { }
+    CustomUnit1 TestUnit;
 
     public override void Start()
     {
-        
+        TestUnit = units[0];
     }
     public override void Update()
     {
-        foreach (CustomUnit1 unit in units.Values)
+        Debug.Log(TestUnit.IsAlive);
+        foreach (var unit in units.Values)
         {
             UnitInfo info = unit.Info;
+
+            if (info.isAlive == false) continue;
 
             Vector2 moveDirection = ((Input.GetAxis("Horizontal") * Vector2.right) +
                                     (Input.GetAxis("Vertical") * Vector2.up)).normalized;

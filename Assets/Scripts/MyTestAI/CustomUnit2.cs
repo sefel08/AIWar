@@ -1,7 +1,9 @@
 using UnityEngine;
 
-public class CustomUnit2 : Unit
+public class CustomUnit2 : Unit<CustomUnit2>
 {
-    public CustomUnit2(UnitManager unitManager, int teamId, int unitId, Command command) : base(unitManager, teamId, unitId, command) { }
-
+    public override void OnUnitDeath()
+    {
+        command.units.Remove(UnitId);
+    }
 }

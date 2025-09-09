@@ -3,7 +3,7 @@ using UnityEngine.UIElements;
 
 public class UnitData
 {
-    public Unit unit;
+    public IUnit unit;
     public GameObject gameObject;
     public Rigidbody2D rigidbody;
 
@@ -15,8 +15,9 @@ public class UnitData
     public bool hasRotated;
     public float health;
     public float nextShootTime; // cooldown for shooting
+    public bool isAlive { get { return health > 0; } }
 
-    public UnitData(Unit unit, Rigidbody2D rigidbody, GameObject gameObject)
+    public UnitData(IUnit unit, Rigidbody2D rigidbody, GameObject gameObject)
     {
         hasMoved = false;
         hasRotated = false;

@@ -45,9 +45,9 @@ Material:
     - _TextureNoiseScale_2: 15
     - _TextureNoiseScale_3: 25
     - _TextureNoiseSpeed: 0.09
-    - _TextureNoiseVisibility: 0.35
+    - _TextureNoiseVisibility: 0.8
     - _ZoneDistanceModifier: 0.572
-    - _ZoneSize: 38.68325
+    - _ZoneSize: 98.1015
     - _ZoneSmoothness: 7
     - _edge1: 31.04
     - _edge2: 35.4
@@ -64,7 +64,7 @@ Material:
     - _EdgeNoiseSpeed: {r: 0.01, g: 0.01, b: 0, a: 0}
     - _NoiseSpeed: {r: 0.1, g: 0.1, b: 0, a: 0}
     - _TextureNoiseSpeed: {r: 0.1, g: 0.1, b: 0, a: 0}
-    - _ZoneColor: {r: 0.20437467, g: 0.6415094, b: 0, a: 0.57254905}
+    - _ZoneColor: {r: 0.20437461, g: 0.6415094, b: 0, a: 0.14901961}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
 --- !u!114 &7023068188383848896

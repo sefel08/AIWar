@@ -2,10 +2,8 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-public class CustomCommand2 : Command
+public class CustomCommand2 : Command<CustomUnit2>, ICommand
 {
-    public CustomCommand2(int teamId, GameMap gameMap) : base(teamId, gameMap) { }
-
     public override void Start()
     {
 

@@ -1,22 +1,23 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
-public class Unit
+public class Unit<TUnit> : IUnit
+    where TUnit : Unit<TUnit>
 {
     private UnitManager unitManager;
 
     /// <summary>
     /// The unique identifier for this unit.
     /// </summary>
-    public readonly int UnitId;
+    public int UnitId { get; private set; }
     /// <summary>
     /// The team identifier to which this unit belongs.
     /// </summary>
-    public readonly int TeamId;
+    public int TeamId { get; private set; }
     /// <summary>
     /// The command in which this unit is.
     /// </summary>
-    public readonly Command command;
+    public Command<TUnit> command;
     /// <summary>
     /// All information that is below that function (Position, Rotation, Direction, ZoneDistance...).
     /// </summary>
@@ -61,14 +62,10 @@ public class Unit
     /// Returns the current health of the unit.
     /// </summary>
     public float Health { get { return unitManager.GetUnitHealth(this); } }
-
-    public Unit(UnitManager unitManager, int teamId, int unitId, Command command)
-    {
-        this.unitManager = unitManager;
-        TeamId = teamId;
-        UnitId = unitId;
-        this.command = command;
-    }
+    /// <summary>
+    /// Returns true if the unit is alive, false otherwise.
+    /// </summary>
+    public bool IsAlive { get { return unitManager.IsUnitAlive(this); } }
 
     /// <summary>
     /// Function that is called when unit dies.
