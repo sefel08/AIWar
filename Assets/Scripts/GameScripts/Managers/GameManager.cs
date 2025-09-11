@@ -75,7 +75,9 @@ public class GameManager : MonoBehaviour
     public GameMapData gameMapData;
 
     private GameObject zoneGameObject;
-    bool gameInitialized = false;
+
+    bool gameStarted = false;
+    public bool gameEnded = false;
 
     private void OnValidate()
     {
@@ -104,14 +106,11 @@ public class GameManager : MonoBehaviour
     }
     void Update()
     {
-        if (gameInitialized == false) return;
+        if (Input.GetKeyUp(KeyCode.Return) && !gameStarted)
+            StartGame();
 
-        zoneSize -= ZONE_GROWTH_RATE * Time.deltaTime; //reduce the zone size
-        zoneMaterial.SetFloat("_ZoneSize", zoneSize);
-
-        unitManager.DamageUnitsOutOfZone(zoneSize, ZONE_DAMAGE);
-        unitManager.UpdateCommands();
-        unitManager.RemoveDeadUnits();
+        if (gameStarted && !gameEnded)
+            UpdateGame();
 
         cameraManager.UpdateCameraPosition();
     }
@@ -125,10 +124,20 @@ public class GameManager : MonoBehaviour
         zoneGameObject.transform.localScale = new Vector3(MAP_SIZE * 0.5f, 1, MAP_SIZE * 0.5f);
         zoneSize = START_ZONE_SIZE; //set the initial zone size
         zoneMaterial.SetFloat("_ZoneSize", zoneSize);
-
+    }
+    private void StartGame()
+    {
         unitManager.StartCommands();
+        gameStarted = true;
+    }
+    private void UpdateGame()
+    {
+        zoneSize -= ZONE_GROWTH_RATE * Time.deltaTime; //reduce the zone size
+        zoneMaterial.SetFloat("_ZoneSize", zoneSize);
 
-        gameInitialized = true;
+        unitManager.DamageUnitsOutOfZone(zoneSize, ZONE_DAMAGE);
+        unitManager.UpdateCommands();
+        unitManager.RemoveDeadUnits();
     }
     private void CreateCommand<CustomUnit, CustomCommand>(int teamId, GameObject unitPrefab, int numberOfUnits, GameMap map, Vector2 spawnLocation, Gradient teamColor)
         where CustomUnit : Unit<CustomUnit>

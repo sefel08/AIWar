@@ -749,7 +749,7 @@ MonoBehaviour:
     m_ColorSpace: -1
     m_NumColorKeys: 2
     m_NumAlphaKeys: 2
-  MAP_SIZE: 200
+  MAP_SIZE: 130
   ELEMENTS_SPACING: 0
   MIN_ELEMENT_SIZE: 5
   MAX_ELEMENT_SIZE: 15

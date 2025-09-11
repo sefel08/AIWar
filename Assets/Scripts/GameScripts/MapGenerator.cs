@@ -24,7 +24,8 @@ public class MapGenerator
             GameObject gameObject = CreateRandomGameObject(gameMapData.mapContainer.transform, minElementSize, maxElementSize, objectColor, out PolygonCollider2D collider);
 
             //move gameObject to a random position within the map size
-            gameObject.transform.position = new Vector3(Random.Range(-size / 2, size / 2), Random.Range(-size / 2, size / 2), 0);
+            //gameObject.transform.position = new Vector3(Random.Range(-size / 2, size / 2), Random.Range(-size / 2, size / 2), 0);
+            gameObject.transform.position = Random.insideUnitCircle * size;
 
             Transform transform = gameObject.transform;
             List<Vector2> points = new List<Vector2>();

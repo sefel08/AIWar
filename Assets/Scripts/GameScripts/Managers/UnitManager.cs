@@ -123,6 +123,26 @@ public class UnitManager
             GameObject.Destroy(unitData.gameObject);
         }
         unitsToRemove.Clear();
+
+        // check if game is over (only one team left)
+        List<CommandData> aliveCommands = new List<CommandData>();
+        List<CommandData> deadCommands = new List<CommandData>();
+        foreach (var commandData in commands.Values.Select(pair => pair.Item2))
+        {
+            if (commandData.unitDataList.Count > 0) aliveCommands.Add(commandData);
+            else deadCommands.Add(commandData);
+        }
+        
+        if (aliveCommands.Count > 0 && deadCommands.Count > 0)
+        {
+            Debug.Log("Team " + aliveCommands[0].teamId + " has won!");
+            gameManager.gameEnded = true;
+        }
+        else if (aliveCommands.Count == 0)
+        {
+            Debug.Log("Tie");
+            gameManager.gameEnded = true;
+        }
     }
     public List<UnitData> GetAllUnitData()
     {

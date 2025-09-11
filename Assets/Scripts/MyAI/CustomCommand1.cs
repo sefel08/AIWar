@@ -11,7 +11,7 @@ public class CustomCommand1 : Command<CustomUnit1>, ICommand
     }
     public override void Update()
     {
-        Debug.Log(TestUnit.IsAlive);
+        //Debug.Log(TestUnit.IsAlive);
         foreach (var unit in units.Values)
         {
             UnitInfo info = unit.Info;

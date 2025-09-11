@@ -11,6 +11,9 @@ public class CameraManager
     Vector3 targetPosition;
     float targetSize;
 
+    Vector2 positionOffset;
+    float sizeOffset;
+
     const float minCameraSize = 35f; // Minimum camera size to prevent zooming out too far
     const float UIPercentage = 0.15f; // Percentage of camera size reserved for UI
     const float edgeDistanceFactor = 0.1f; // Factor to determine distance from edges to seen units
@@ -28,6 +31,19 @@ public class CameraManager
         float cameraSize = camera.orthographicSize;
         float edgeDistance = edgeDistanceFactor * cameraSize;
         float UISize = cameraSize * UIPercentage;
+
+
+        // Camera movement and zoom logic
+        if (Input.GetKey(KeyCode.LeftShift))
+        {
+            positionOffset += new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical")) * (cameraSize * 0.5f * Time.deltaTime);
+            sizeOffset += -Input.mouseScrollDelta.y * (cameraSize * 0.1f);
+        }
+        else
+        {
+            positionOffset = Vector2.zero;
+            sizeOffset = 0f;
+        }
 
         float maxY;
         float minY;
@@ -68,11 +84,11 @@ public class CameraManager
         float centerY = ((maxY + minY) / 2f) - UISize;
         float centerX = (maxX + minX) / 2f;
 
-        targetPosition = new Vector3(centerX, centerY, -10f);
+        targetPosition = new Vector3(centerX, centerY, -10f) + new Vector3(positionOffset.x, positionOffset.y, 0f);
 
         // Adjust camera size based on the distance between the furthest units
         float distanceY = maxY - minY;
-        targetSize = Mathf.Max((distanceY / 2f) + UISize + (edgeDistance * 2f), minCameraSize);
+        targetSize = Mathf.Max((distanceY / 2f) + UISize + (edgeDistance * 2f), minCameraSize) + sizeOffset;
 
         MoveCamera();
     }
