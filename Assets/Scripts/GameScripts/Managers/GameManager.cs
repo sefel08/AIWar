@@ -77,6 +77,8 @@ public class GameManager : MonoBehaviour
     private GameObject zoneGameObject;
 
     bool gameStarted = false;
+    bool gamePaused = false;
+    [HideInInspector]
     public bool gameEnded = false;
 
     private void OnValidate()
@@ -104,10 +106,18 @@ public class GameManager : MonoBehaviour
 
         InitializeGame();
     }
+    private void TogglePauseGame()
+    {
+        gamePaused = !gamePaused;
+        Time.timeScale = gamePaused ? 0f : 1f;
+    }
     void Update()
     {
         if (Input.GetKeyUp(KeyCode.Return) && !gameStarted)
             StartGame();
+
+        if (Input.GetKeyUp(KeyCode.Escape))
+            TogglePauseGame();
 
         if (gameStarted && !gameEnded)
             UpdateGame();
@@ -135,8 +145,8 @@ public class GameManager : MonoBehaviour
         zoneSize -= ZONE_GROWTH_RATE * Time.deltaTime; //reduce the zone size
         zoneMaterial.SetFloat("_ZoneSize", zoneSize);
 
-        unitManager.DamageUnitsOutOfZone(zoneSize, ZONE_DAMAGE);
         unitManager.UpdateCommands();
+        unitManager.DamageUnitsOutOfZone(zoneSize, ZONE_DAMAGE);
         unitManager.RemoveDeadUnits();
     }
     private void CreateCommand<CustomUnit, CustomCommand>(int teamId, GameObject unitPrefab, int numberOfUnits, GameMap map, Vector2 spawnLocation, Gradient teamColor)
@@ -198,14 +208,5 @@ public class GameManager : MonoBehaviour
 
         //add command to the commands dictionary
         unitManager.AddCommand(teamId, command, commandData);
-    }
-
-    private void OnDrawGizmos()
-    {
-        // Draw the map size
-        Gizmos.DrawWireCube(Vector3.zero, new Vector3(MAP_SIZE, MAP_SIZE, 0));
-        // Draw the zone size
-        Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(Vector3.zero, zoneSize);
     }
 }

@@ -17,7 +17,7 @@ public class UnitManager
     public readonly float UNIT_SIZE;
 
     //constants
-    private const float MOVE_SPEED = 10f;
+    private const float MOVE_SPEED = 6f;
     private const float TURN_SPEED = 180f;
     private const float PROJECTILE_DISTANCE = 120f; // distance the projectile will travel if it doesn't hit anything
 
@@ -486,6 +486,8 @@ public class UnitManager
     }
     public (HitType, HitData) CastARay(IUnit unit, Vector2 direction)
     {
+        if (!IsNormalized(direction)) throw new ArgumentException("Direction must be normalized");
+
         UnitData unitData = GetUnitData(unit);
 
         if (!IsDirectionInUnitFieldOfView(unitData, direction))
@@ -510,6 +512,7 @@ public class UnitManager
     }
     public (HitType, HitData) CastARay(IUnit unit, Vector2 direction, float distance)
     {
+        if (!IsNormalized(direction)) throw new ArgumentException("Direction must be normalized");
         if (distance <= 0) throw new ArgumentException("Distance must be greater than 0");
 
         UnitData unitData = GetUnitData(unit);
@@ -631,7 +634,7 @@ public class UnitManager
     }
     private bool IsNormalized(Vector2 direction)
     {
-        if(direction == Vector2.zero) return false;
+        if(direction == Vector2.zero) return true;
         return Mathf.Abs(direction.magnitude - 1f) < 1e-5f;
     }
     private float GetUnitZoneDistance(UnitData unitData)

@@ -47,7 +47,7 @@ Material:
     - _TextureNoiseSpeed: 0.09
     - _TextureNoiseVisibility: 0.8
     - _ZoneDistanceModifier: 0.572
-    - _ZoneSize: 68.83521
+    - _ZoneSize: 45.62646
     - _ZoneSmoothness: 7
     - _edge1: 31.04
     - _edge2: 35.4
