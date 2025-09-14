@@ -54,7 +54,7 @@ public class GameManager : MonoBehaviour
     [Header("Zone Settings")]
     [SerializeField] private float START_ZONE_SIZE; // initial value of the zone
     [SerializeField] private float ZONE_GROWTH_RATE; // how much the zone will grow each second, used to make the game more dynamic and force players to move towards the center of the map
-    [SerializeField] private float ZONE_DAMAGE; // how much damage the zone will deal to the units each second, used to make the game more dynamic and force players to move towards the center of the map
+    public float ZONE_DAMAGE; // how much damage the zone will deal to the units each second, used to make the game more dynamic and force players to move towards the center of the map
     [Header("Unit Settings")]
     public float FIELD_OF_VIEW; // angle of the field of view in degrees, how much the unit can see in front of it
     public int ENEMY_POINT_PRECISION; // maximum points to test between enemy center and side
@@ -146,7 +146,6 @@ public class GameManager : MonoBehaviour
         zoneMaterial.SetFloat("_ZoneSize", zoneSize);
 
         unitManager.UpdateCommands();
-        unitManager.DamageUnitsOutOfZone(zoneSize, ZONE_DAMAGE);
         unitManager.RemoveDeadUnits();
     }
     private void CreateCommand<CustomUnit, CustomCommand>(int teamId, GameObject unitPrefab, int numberOfUnits, GameMap map, Vector2 spawnLocation, Gradient teamColor)

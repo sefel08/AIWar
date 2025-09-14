@@ -72,25 +72,17 @@ public class UnitManager
             {
                 unitData.hasMoved = false; //reset hasMoved flag for each unit
                 unitData.hasRotated = false; //reset hasRotated flag for each unit
+
+                // draw unit's field of view for debugging
                 if (gameManager.showUnitsFieldOfView)
-                    DrawUnitFieldOfView(unitData); //draw unit's field of view for debugging
+                    DrawUnitFieldOfView(unitData);
+
+                //damage unit if it is out of the zone
+                if (IsUnitOutOfTheZone(unitData))
+                    DamageUnit(unitData, gameManager.ZONE_DAMAGE * Time.deltaTime);
             }
 
             pair.Item1.Update(); //call update method for each command
-        }
-    }
-    public void DamageUnitsOutOfZone(float zoneSize, float zoneDamage)
-    {
-        foreach (CommandData commandData in commands.Values.Select(pair => pair.Item2))
-        {
-            foreach (UnitData unitData in commandData.unitDataList.Values)
-            {
-                // Add zone damage to the unit if it is inside the zone
-                if (Vector2.Distance(unitData.Position, Vector2.zero) > zoneSize)
-                {
-                    DamageUnit(unitData, zoneDamage * Time.deltaTime); //apply damage to the unit
-                }
-            }
         }
     }
     public void RemoveDeadUnits()
@@ -112,9 +104,6 @@ public class UnitManager
             //run unit's death function
             unit.OnUnitDeath();
 
-            ////remove unit from the command's units list
-            //command.units.Remove(unit.UnitId);
-
             //remove unit from the command's unit data list
             commandData.unitDataList.Remove(commandUnitId.Item2);
             //remove unit from the unit game objects dictionary
@@ -127,8 +116,9 @@ public class UnitManager
         // check if game is over (only one team left)
         List<CommandData> aliveCommands = new List<CommandData>();
         List<CommandData> deadCommands = new List<CommandData>();
-        foreach (var commandData in commands.Values.Select(pair => pair.Item2))
+        foreach (var pair in commands.Values)
         {
+            CommandData commandData = pair.Item2;
             if (commandData.unitDataList.Count > 0) aliveCommands.Add(commandData);
             else deadCommands.Add(commandData);
         }
@@ -666,5 +656,9 @@ public class UnitManager
         Vector2 directionRight = Quaternion.Euler(0, 0, -gameManager.FIELD_OF_VIEW / 2) * unitData.Direction;
         Debug.DrawLine(unitData.Position, unitData.Position + directionLeft * (gameManager.MAP_SIZE), Color.gray);
         Debug.DrawLine(unitData.Position, unitData.Position + directionRight * (gameManager.MAP_SIZE), Color.gray);
+    }
+    private bool IsUnitOutOfTheZone(UnitData unitData)
+    {
+        return Vector2.Distance(unitData.Position, Vector2.zero) > gameManager.zoneSize;
     }
 }
