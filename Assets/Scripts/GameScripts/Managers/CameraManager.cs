@@ -29,21 +29,32 @@ public class CameraManager
     public void UpdateCameraPosition()
     {
         float cameraSize = camera.orthographicSize;
-        float edgeDistance = edgeDistanceFactor * cameraSize;
-        float UISize = cameraSize * UIPercentage;
 
+        (Vector3, float) cameraTargetValues = CalculateCameraTargetValues(cameraSize);
+        
+        positionOffset += new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical")) * (cameraSize * 0.5f * Time.deltaTime);
+        sizeOffset += -Input.mouseScrollDelta.y * (cameraSize * 0.1f);
 
         // Camera movement and zoom logic
         if (Input.GetKey(KeyCode.LeftShift))
         {
-            positionOffset += new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical")) * (cameraSize * 0.5f * Time.deltaTime);
-            sizeOffset += -Input.mouseScrollDelta.y * (cameraSize * 0.1f);
+            targetPosition = cameraTargetValues.Item1 + new Vector3(positionOffset.x, positionOffset.y, 0);
+            targetSize = Mathf.Max(cameraTargetValues.Item2 + sizeOffset, minCameraSize);
         }
         else
         {
+            targetPosition = cameraTargetValues.Item1;
+            targetSize = Mathf.Max(cameraTargetValues.Item2, minCameraSize);
             positionOffset = Vector2.zero;
             sizeOffset = 0f;
         }
+
+        MoveCamera();
+    }
+    private (Vector3, float) CalculateCameraTargetValues(float cameraSize)
+    {
+        float edgeDistance = edgeDistanceFactor * cameraSize;
+        float UISize = cameraSize * UIPercentage;
 
         float maxY;
         float minY;
@@ -54,17 +65,12 @@ public class CameraManager
 
         if (allUnits.Count <= 0)
         {
-            targetPosition = new Vector3(0, 0 - UISize, -10f);
-            targetSize = mapSize;
-            MoveCamera();
-            return;
+            return (new Vector3(0, 0 - UISize, -10f), mapSize);
         }
-        if (allUnits.Count == 1) 
+        if (allUnits.Count == 1)
         {
             Vector2 unitPosition = allUnits[0].Position;
-            targetPosition = new Vector3(unitPosition.x, unitPosition.y, -10f);
-            MoveCamera();
-            return;
+            return (new Vector3(unitPosition.x, unitPosition.y, -10f), mapSize / 4f);
         }
 
         maxY = allUnits[0].Position.y;
@@ -81,16 +87,16 @@ public class CameraManager
             if (unitPosition.x < minX) minX = unitPosition.x;
         }
 
+        // Calculate Position
         float centerY = ((maxY + minY) / 2f) - UISize;
         float centerX = (maxX + minX) / 2f;
+        targetPosition = new Vector3(centerX, centerY, -10f);
 
-        targetPosition = new Vector3(centerX, centerY, -10f) + new Vector3(positionOffset.x, positionOffset.y, 0f);
-
-        // Adjust camera size based on the distance between the furthest units
+        // Calculate Size
         float distanceY = maxY - minY;
-        targetSize = Mathf.Max((distanceY / 2f) + UISize + (edgeDistance * 2f), minCameraSize) + sizeOffset;
+        targetSize = Mathf.Max((distanceY / 2f) + UISize + (edgeDistance * 2f), minCameraSize);
 
-        MoveCamera();
+        return (targetPosition, targetSize);
     }
     private void MoveCamera()
     {

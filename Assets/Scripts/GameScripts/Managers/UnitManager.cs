@@ -17,8 +17,6 @@ public class UnitManager
     public readonly float UNIT_SIZE;
 
     //constants
-    private const float MOVE_SPEED = 6f;
-    private const float TURN_SPEED = 180f;
     private const float PROJECTILE_DISTANCE = 120f; // distance the projectile will travel if it doesn't hit anything
 
     GameObjectPool<ProjectileScript> projectilePool; // pool for projectiles to reuse them instead of creating new ones
@@ -190,7 +188,7 @@ public class UnitManager
         unitData.hasMoved = true;
 
         Vector2 position = unitData.Position;
-        Vector2 newPosition = position + (direction.normalized * MOVE_SPEED * Time.fixedDeltaTime);
+        Vector2 newPosition = position + (direction.normalized * gameManager.UNIT_MOVE_SPEED * Time.fixedDeltaTime);
         unitData.rigidbody.MovePosition(newPosition);
         return true;
     }
@@ -203,7 +201,7 @@ public class UnitManager
 
         Vector2 position = unitData.Position;
         Vector2 direction = (targetPosition - position).normalized;
-        Vector2 newPosition = position + (direction * MOVE_SPEED * Time.fixedDeltaTime);
+        Vector2 newPosition = position + (direction * gameManager.UNIT_MOVE_SPEED * Time.fixedDeltaTime);
         unitData.rigidbody.MovePosition(newPosition);
         return true;
     }
@@ -214,7 +212,7 @@ public class UnitManager
         if (unitData.hasRotated) return false;
         unitData.hasRotated = true;
 
-        unitData.rigidbody.MoveRotation(Quaternion.RotateTowards(unitData.Rotation, targetRotation, TURN_SPEED * Time.fixedDeltaTime));
+        unitData.rigidbody.MoveRotation(Quaternion.RotateTowards(unitData.Rotation, targetRotation, gameManager.UNIT_ROTATION_SPEED * Time.fixedDeltaTime));
         return true;
     }
     public bool RotateUnitTowards(IUnit unit, Vector2 direction)
@@ -228,7 +226,7 @@ public class UnitManager
 
         float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
         Quaternion targetRotation = Quaternion.AngleAxis(angle, Vector3.forward);
-        unitData.rigidbody.MoveRotation(Quaternion.RotateTowards(unitData.Rotation, targetRotation, TURN_SPEED * Time.fixedDeltaTime));
+        unitData.rigidbody.MoveRotation(Quaternion.RotateTowards(unitData.Rotation, targetRotation, gameManager.UNIT_ROTATION_SPEED * Time.fixedDeltaTime));
         return true;
     }
     public bool RotateUnitTowardsPoint(IUnit unit, Vector2 targetPosition)
@@ -241,7 +239,7 @@ public class UnitManager
         Vector2 direction = (targetPosition - unitData.Position).normalized;
         float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
         Quaternion targetRotation = Quaternion.AngleAxis(angle, Vector3.forward);
-        unitData.rigidbody.MoveRotation(Quaternion.RotateTowards(unitData.Rotation, targetRotation, TURN_SPEED * Time.fixedDeltaTime));
+        unitData.rigidbody.MoveRotation(Quaternion.RotateTowards(unitData.Rotation, targetRotation, gameManager.UNIT_ROTATION_SPEED * Time.fixedDeltaTime));
         return true;
     }
     public bool RotateUnit(IUnit unit, bool clockwise)
@@ -251,7 +249,7 @@ public class UnitManager
         if (unitData.hasRotated) return false;
         unitData.hasRotated = true;
 
-        float angle = TURN_SPEED * Time.fixedDeltaTime;
+        float angle = gameManager.UNIT_ROTATION_SPEED * Time.fixedDeltaTime;
         if (clockwise) angle = -angle;
 
         Quaternion rotation = unitData.Rotation;

@@ -57,6 +57,8 @@ public class GameManager : MonoBehaviour
     public float ZONE_DAMAGE; // how much damage the zone will deal to the units each second, used to make the game more dynamic and force players to move towards the center of the map
     [Header("Unit Settings")]
     public float FIELD_OF_VIEW; // angle of the field of view in degrees, how much the unit can see in front of it
+    public float UNIT_MOVE_SPEED; // speed of the unit movement
+    public float UNIT_ROTATION_SPEED; // speed of the unit rotation
     public int ENEMY_POINT_PRECISION; // maximum points to test between enemy center and side
     public float SHOOTING_DAMAGE; // damage dealt by the unit when it shoots
     public float SHOOTING_ACCURACY; // accuracy of the shooting, how much the bullet can deviate from the center of the unit in a random direction
@@ -113,12 +115,17 @@ public class GameManager : MonoBehaviour
     }
     void Update()
     {
+        // starting the game
         if (Input.GetKeyUp(KeyCode.Return) && !gameStarted)
             StartGame();
 
-        if (Input.GetKeyUp(KeyCode.Escape))
+        // pausing and unpausing the game
+        if ((Input.GetKeyDown(KeyCode.Space) && !gamePaused) || Input.GetKeyDown(KeyCode.Escape))
+            TogglePauseGame();
+        else if (Input.GetKeyUp(KeyCode.Space) && gamePaused)
             TogglePauseGame();
 
+        // updating the game
         if (gameStarted && !gameEnded)
             UpdateGame();
 
@@ -127,7 +134,7 @@ public class GameManager : MonoBehaviour
 
     private void InitializeGame()
     {
-        CreateCommand<CustomUnit1, CustomCommand1>(1, unitPrefab, command1UnitCount, gameMap, new Vector2(0, MAP_SIZE / 2f + 5f), command1Color);
+        CreateCommand<CustomUnit2, CustomCommand2>(1, unitPrefab, command1UnitCount, gameMap, new Vector2(0, MAP_SIZE / 2f + 5f), command1Color);
         CreateCommand<CustomUnit2, CustomCommand2>(2, unitPrefab, command2UnitCount, gameMap, new Vector2(0, -MAP_SIZE / 2f - 5f), command2Color);
         
         zoneGameObject = Instantiate(zonePrefab, new Vector3(0f, 0f, -9f), Quaternion.Euler(-90, 0, 0));
