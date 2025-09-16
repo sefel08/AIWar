@@ -11,10 +11,10 @@ public class MapGenerator
         this.mapMaterial = mapMaterial;
     }
 
-    public (GameMap, GameMapData) GenerateMap(float size, float unitSize, float elementSpacing, int maxNumberOfTrials, float minElementSize, float maxElementSize, Gradient mapColor)
+    public (GameMap, GameMapData) GenerateMap(float size, float unitSize, float elementSpacing, int maxNumberOfTrials, float minElementSize, float maxElementSize, Gradient mapColor, GameObject mapParent)
     {
         GameMap gameMap = new GameMap();
-        GameMapData gameMapData = new GameMapData(new GameObject("Map"));
+        GameMapData gameMapData = new GameMapData(mapParent);
 
         int elementNumber = 1;
         int numberOfTrials = 0;

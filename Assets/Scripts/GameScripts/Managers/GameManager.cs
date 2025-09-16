@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -45,7 +46,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] int command2UnitCount; // number of units in command 2
     [SerializeField] Gradient command2Color; // color of command 2
     [Header("Map Settings")]
-    public float MAP_SIZE; // size of the map in units, the map will be a square with this size
+    public float MAP_SIZE; // size of the map, diameter of the map
     [SerializeField] private float ELEMENTS_SPACING; // how much space will be between the map elements, used to make more spraced out map elements
     [SerializeField] private float MIN_ELEMENT_SIZE; // minimum size of the map element, used to generate the map
     [SerializeField] private float MAX_ELEMENT_SIZE; // maximum size of the map element, used to generate the map
@@ -66,17 +67,26 @@ public class GameManager : MonoBehaviour
     
     [HideInInspector]
     public float UNIT_SIZE; // half of the unit size, used for raycasting
+    
     [HideInInspector]
     public float zoneSize;
-    
+
+    // Managers
     UnitManager unitManager;
     UIManager uiManager;
     CameraManager cameraManager;
     MapGenerator mapGenerator;
+
+    // Map data
     GameMap gameMap;
     public GameMapData gameMapData;
 
+    // Game Objects
+    private GameObject particleParent;
+    private GameObject mapParent;
     private GameObject zoneGameObject;
+    private GameObject command1Parent;
+    private GameObject command2Parent;
 
     bool gameStarted = false;
     bool gamePaused = false;
@@ -95,18 +105,7 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
-        UNIT_SIZE = unitPrefab.transform.localScale.x / 2f;
-
-        uiManager = new UIManager(uiDocument);
-        unitManager = new UnitManager(this, uiManager);
-        cameraManager = new CameraManager(unitManager, Camera.main, MAP_SIZE);
-        mapGenerator = new MapGenerator(unlitMaterial);
-
-        var data = mapGenerator.GenerateMap(MAP_SIZE, UNIT_SIZE * 2, ELEMENTS_SPACING, MAP_PRECISION, MIN_ELEMENT_SIZE, MAX_ELEMENT_SIZE, mapColor);
-        gameMap = data.Item1; //get the game map
-        gameMapData = data.Item2; //get the game map data
-
-        InitializeGame();
+        InitializeNewGame();
     }
     private void TogglePauseGame()
     {
@@ -129,16 +128,43 @@ public class GameManager : MonoBehaviour
         if (gameStarted && !gameEnded)
             UpdateGame();
 
+        // restarting the game
+        if (Input.GetKeyUp(KeyCode.R))
+            InitializeNewGame();
+
         cameraManager.UpdateCameraPosition();
     }
 
-    private void InitializeGame()
+    private void InitializeNewGame()
     {
-        CreateCommand<CustomUnit2, CustomCommand2>(1, unitPrefab, command1UnitCount, gameMap, new Vector2(0, MAP_SIZE / 2f + 5f), command1Color);
-        CreateCommand<CustomUnit2, CustomCommand2>(2, unitPrefab, command2UnitCount, gameMap, new Vector2(0, -MAP_SIZE / 2f - 5f), command2Color);
-        
+        UNIT_SIZE = unitPrefab.transform.localScale.x / 2f;
+
+        gameStarted = false;
+        gameEnded = false;
+
+        if (!particleParent.IsDestroyed()) Destroy(particleParent);
+        if (!mapParent.IsDestroyed()) Destroy(mapParent);
+        if (!zoneGameObject.IsDestroyed()) Destroy(zoneGameObject);
+        if (!command1Parent.IsDestroyed()) Destroy(command1Parent);
+        if (!command2Parent.IsDestroyed()) Destroy(command2Parent);
+
+        particleParent = new GameObject("Particles");
+        mapParent = new GameObject("Map");
         zoneGameObject = Instantiate(zonePrefab, new Vector3(0f, 0f, -9f), Quaternion.Euler(-90, 0, 0));
         zoneGameObject.transform.localScale = new Vector3(MAP_SIZE * 0.5f, 1, MAP_SIZE * 0.5f);
+
+        uiManager = new UIManager(uiDocument);
+        unitManager = new UnitManager(this, uiManager, particleParent.transform);
+        cameraManager = new CameraManager(unitManager, Camera.main, MAP_SIZE);
+        mapGenerator = new MapGenerator(unlitMaterial);
+
+        var data = mapGenerator.GenerateMap(MAP_SIZE, UNIT_SIZE * 2, ELEMENTS_SPACING, MAP_PRECISION, MIN_ELEMENT_SIZE, MAX_ELEMENT_SIZE, mapColor, mapParent);
+        gameMap = data.Item1; //get the game map
+        gameMapData = data.Item2; //get the game map data
+
+        CreateCommand<CustomUnit1, CustomCommand1>(1, unitPrefab, command1UnitCount, gameMap, new Vector2(0, MAP_SIZE / 2f + 5f), command1Color, ref command1Parent);
+        CreateCommand<CustomUnit2, CustomCommand2>(2, unitPrefab, command2UnitCount, gameMap, new Vector2(0, -MAP_SIZE / 2f - 5f), command2Color, ref command2Parent);
+        
         zoneSize = START_ZONE_SIZE; //set the initial zone size
         zoneMaterial.SetFloat("_ZoneSize", zoneSize);
     }
@@ -155,16 +181,17 @@ public class GameManager : MonoBehaviour
         unitManager.UpdateCommands();
         unitManager.RemoveDeadUnits();
     }
-    private void CreateCommand<CustomUnit, CustomCommand>(int teamId, GameObject unitPrefab, int numberOfUnits, GameMap map, Vector2 spawnLocation, Gradient teamColor)
+    private void CreateCommand<CustomUnit, CustomCommand>(int teamId, GameObject unitPrefab, int numberOfUnits, GameMap map, Vector2 spawnLocation, Gradient teamColor, ref GameObject parent)
         where CustomUnit : Unit<CustomUnit>
         where CustomCommand : Command<CustomUnit>, ICommand
     {
         //create command
         CustomCommand command = (CustomCommand)Activator.CreateInstance(typeof(CustomCommand));
         command.gameMap = new GameMap(map); //give a copy of the map to the command
+        command.gameSettings = GetGameSettings(); //give a copy of the game settings to the command
         CommandData commandData = new CommandData(teamId);
 
-        GameObject parent = new GameObject("Command" + teamId);
+        parent = new GameObject("Command" + teamId);
 
         uiManager.CreateTeamContainer(teamId);
 
@@ -214,5 +241,23 @@ public class GameManager : MonoBehaviour
 
         //add command to the commands dictionary
         unitManager.AddCommand(teamId, command, commandData);
+    }
+    private GameSettings GetGameSettings()
+    {
+        return new GameSettings() 
+        { 
+            MAP_SIZE = MAP_SIZE,
+            ELEMENTS_SPACING = ELEMENTS_SPACING,
+            MIN_ELEMENT_SIZE = MIN_ELEMENT_SIZE,
+            MAX_ELEMENT_SIZE = MAX_ELEMENT_SIZE,
+            ZONE_DAMAGE = ZONE_DAMAGE,
+            FIELD_OF_VIEW = FIELD_OF_VIEW,
+            UNIT_MOVE_SPEED = UNIT_MOVE_SPEED,
+            UNIT_ROTATION_SPEED = UNIT_ROTATION_SPEED,
+            SHOOTING_DAMAGE = SHOOTING_DAMAGE,
+            SHOOTING_ACCURACY = SHOOTING_ACCURACY,
+            SHOOTING_COOLDOWN = SHOOTING_COOLDOWN,
+            UNIT_SIZE = UNIT_SIZE
+        };
     }
 }

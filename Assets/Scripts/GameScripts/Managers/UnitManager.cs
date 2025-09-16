@@ -26,7 +26,7 @@ public class UnitManager
     GameManager gameManager;
     UIManager uiManager;
 
-    public UnitManager(GameManager gameManager, UIManager uiManager)
+    public UnitManager(GameManager gameManager, UIManager uiManager, Transform particleParent)
     {
         commands = new();
         gameObjectUnitDataDictionary = new();
@@ -34,8 +34,6 @@ public class UnitManager
 
         this.gameManager = gameManager;
         this.uiManager = uiManager;
-
-        Transform particleParent = new GameObject("Particles").transform;
 
         projectilePool = new GameObjectPool<ProjectileScript>(particleParent, "Projectiles", gameManager.projectilePrefab, true);
         hitParticlePool = new ParticlePool(particleParent, "HitParticles", gameManager.hitPrefab);

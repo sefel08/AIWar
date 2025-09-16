@@ -13,6 +13,11 @@ public class Command<TUnit>
     /// The collection of map elements which represents walls on the map.
     /// </summary>
     public GameMap gameMap;
+    /// <summary>
+    /// The collection of game settings.
+    /// </summary>
+    public GameSettings gameSettings;
+
     public float ZoneSize { get { return gameManagerInstance.zoneSize; } }
     
     /// <summary>

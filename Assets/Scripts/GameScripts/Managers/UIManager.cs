@@ -30,6 +30,7 @@ public class UIManager
         healthBarMap = new Dictionary<int, Dictionary<int, VisualElement>>();
 
         VisualElement root = document.rootVisualElement;
+        root.Clear();
 
         mainContainer = new VisualElement();
         mainContainer.AddToClassList("mainContainer");
