@@ -22,6 +22,8 @@ public class CustomCommand1 : Command<CustomUnit1>, ICommand
 
             if (moveDirection != Vector2.zero) unit.Move(moveDirection);
 
+            if(Input.GetKeyDown(KeyCode.G)) unit.Move(new Vector2(1, 1));
+
             //Rotate towards mouse position
             Vector2 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
             Vector2 directionToMouse = (mousePosition - info.position).normalized;

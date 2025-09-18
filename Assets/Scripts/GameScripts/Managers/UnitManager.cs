@@ -54,9 +54,18 @@ public class UnitManager
     // Auto methods
     public void StartCommands()
     {
-        foreach (var command in commands.Values.Select(pair => pair.Item1))
+        foreach (var pair in commands.Values)
         {
-            command.Start(); //call start method for each command
+            CommandData commandData = pair.Item2;
+            try
+            {
+                pair.Item1.Start(); //call start method for each command
+            }
+            catch (Exception e)
+            {
+                commandData.yellowCardCount++; //give a yellow card to the command
+                Debug.Log($"Error in command {commandData.teamId} Start method: " + e.Message);
+            }
         }
     }
     public void UpdateCommands()
@@ -78,7 +87,15 @@ public class UnitManager
                     DamageUnit(unitData, gameManager.ZONE_DAMAGE * Time.deltaTime);
             }
 
-            pair.Item1.Update(); //call update method for each command
+            try
+            {
+                pair.Item1.Update(); //call update method for each command
+            }
+            catch (Exception e)
+            {
+                commandData.yellowCardCount++; //give a yellow card to the command
+                Debug.Log($"Error in command {commandData.teamId} Update method: " + e.Message);
+            }
         }
     }
     public void RemoveDeadUnits()
@@ -108,6 +125,15 @@ public class UnitManager
             GameObject.Destroy(unitData.gameObject);
         }
         unitsToRemove.Clear();
+    }
+    /// <summary>
+    /// returns true if there is a winning team, false otherwise. If there is a winning team, the teamId is set to the winning team's id. If there is a tie, the teamId is set to -1.
+    /// </summary>
+    /// <param name="teamId"></param>
+    /// <returns></returns>
+    public bool TryGetWinningTeam(out int teamId)
+    {
+        teamId = -2; // -2 means game is not over yet
 
         // check if game is over (only one team left)
         List<CommandData> aliveCommands = new List<CommandData>();
@@ -115,20 +141,22 @@ public class UnitManager
         foreach (var pair in commands.Values)
         {
             CommandData commandData = pair.Item2;
-            if (commandData.unitDataList.Count > 0) aliveCommands.Add(commandData);
+            if (commandData.unitDataList.Count > 0 && commandData.yellowCardCount <= 1) aliveCommands.Add(commandData);
             else deadCommands.Add(commandData);
         }
-        
+
         if (aliveCommands.Count > 0 && deadCommands.Count > 0)
         {
-            Debug.Log("Team " + aliveCommands[0].teamId + " has won!");
-            gameManager.gameEnded = true;
+            teamId = aliveCommands[0].teamId;
+            return true;
         }
         else if (aliveCommands.Count == 0)
         {
-            Debug.Log("Tie");
-            gameManager.gameEnded = true;
+            teamId = -1; //draw
+            return true;
         }
+
+        return false;
     }
     public List<UnitData> GetAllUnitData()
     {

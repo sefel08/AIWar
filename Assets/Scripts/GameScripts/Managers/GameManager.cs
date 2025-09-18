@@ -180,6 +180,17 @@ public class GameManager : MonoBehaviour
 
         unitManager.UpdateCommands();
         unitManager.RemoveDeadUnits();
+
+        // check for winning team and end the game
+        if (unitManager.TryGetWinningTeam(out int winningTeamId))
+        {
+            if (winningTeamId == -1)
+                Debug.Log("The game ended in a draw!");
+            else
+                Debug.Log($"Team {winningTeamId} has won the game!");
+
+            gameEnded = true;
+        }
     }
     private void CreateCommand<CustomUnit, CustomCommand>(int teamId, GameObject unitPrefab, int numberOfUnits, GameMap map, Vector2 spawnLocation, Gradient teamColor, ref GameObject parent)
         where CustomUnit : Unit<CustomUnit>

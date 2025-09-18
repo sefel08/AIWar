@@ -6,6 +6,7 @@ public class CommandData
 {
     public readonly int teamId;
     public Dictionary<int, UnitData> unitDataList;
+    public int yellowCardCount = 0;
 
     public CommandData(int teamId)
     {
