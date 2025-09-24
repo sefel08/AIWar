@@ -687,6 +687,7 @@ MonoBehaviour:
   zonePrefab: {fileID: 2903661080740251697, guid: 54e467bbba61ae54b9607bdf22f03837, type: 3}
   unlitMaterial: {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
   zoneMaterial: {fileID: 2100000, guid: 1d22be14b88956d488330d4422a39161, type: 2}
+  maxYellowCards: 5
   command1UnitCount: 9
   command1Color:
     serializedVersion: 2

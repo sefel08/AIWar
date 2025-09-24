@@ -57,15 +57,7 @@ public class UnitManager
         foreach (var pair in commands.Values)
         {
             CommandData commandData = pair.Item2;
-            try
-            {
-                pair.Item1.Start(); //call start method for each command
-            }
-            catch (Exception e)
-            {
-                commandData.yellowCardCount++; //give a yellow card to the command
-                Debug.Log($"Error in command {commandData.teamId} Start method: " + e.Message);
-            }
+            SafelyRunCommandMethod(pair.Item1.Start, commandData);
         }
     }
     public void UpdateCommands()
@@ -87,15 +79,7 @@ public class UnitManager
                     DamageUnit(unitData, gameManager.ZONE_DAMAGE * Time.deltaTime);
             }
 
-            try
-            {
-                pair.Item1.Update(); //call update method for each command
-            }
-            catch (Exception e)
-            {
-                commandData.yellowCardCount++; //give a yellow card to the command
-                Debug.Log($"Error in command {commandData.teamId} Update method: " + e.Message);
-            }
+            SafelyRunCommandMethod(pair.Item1.Update, commandData);
         }
     }
     public void RemoveDeadUnits()
@@ -141,7 +125,7 @@ public class UnitManager
         foreach (var pair in commands.Values)
         {
             CommandData commandData = pair.Item2;
-            if (commandData.unitDataList.Count > 0 && commandData.yellowCardCount <= 1) aliveCommands.Add(commandData);
+            if (commandData.unitDataList.Count > 0 && commandData.yellowCardCount <= gameManager.maxYellowCards) aliveCommands.Add(commandData);
             else deadCommands.Add(commandData);
         }
 
@@ -162,6 +146,37 @@ public class UnitManager
     {
         return commands.Values.Select(pair => pair.Item2).SelectMany(commandData => commandData.unitDataList.Values).ToList();
     }
+    /// <summary>
+    /// Executes the specified command safely, handling any exceptions that occur during its execution.
+    /// </summary>
+    /// <remarks>If an exception is thrown during the execution of the command, the method increments the
+    /// yellow card count for the associated team and logs the error. If the yellow card count exceeds the maximum
+    /// allowed, the team is disqualified, and the game state is checked for a potential win condition.</remarks>
+    /// <param name="method">The <see cref="Action"/> representing the command to execute.</param>
+    /// <param name="commandData">The data associated with the command, including its team identifier and penalty tracking.</param>
+    private void SafelyRunCommandMethod(Action method, CommandData commandData)
+    {
+        try
+        {
+            method();
+        }
+        catch (Exception e)
+        {
+            commandData.yellowCardCount++; //give a yellow card to the command
+            Debug.Log($"Error in command {commandData.teamId}. " + e.Message);
+            //fast check if the command already has max yellow cards
+            if (commandData.yellowCardCount <= gameManager.maxYellowCards)
+                uiManager.AddYellowCard(commandData.teamId, $"#{commandData.yellowCardCount.ToString()}", false);
+            else
+            {
+                uiManager.AddYellowCard(commandData.teamId, "Disqualified", true);
+                Debug.Log($"Command {commandData.teamId} has been disqualified for receiving {commandData.yellowCardCount} yellow cards.");
+                gameManager.CheckForWin();
+            }
+        }
+    }
+
+    // Unit methods
 
     // Getters for Unit class
     public UnitInfo GetUnitInfo(IUnit unit)

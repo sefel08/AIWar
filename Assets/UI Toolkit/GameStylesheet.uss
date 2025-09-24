@@ -6,7 +6,7 @@
     justify-content: space-evenly;
 }
 
-.teamContainer {
+.unitContainer {
     background-color: rgba(0, 0, 0, 0.3);
     height: 100%;
     width: 100%;
@@ -26,7 +26,7 @@
     overflow: hidden;
 }
 
-.unitContainer {
+.unit {
     margin-top: 10px;
     margin-right: 10px;
     margin-bottom: 10px;
@@ -39,15 +39,52 @@
     flex-grow: 1;
 }
 
-.unitContainer Label {
+.unit Label {
     margin-top: 2px;
     margin-right: 2px;
     margin-bottom: 2px;
     margin-left: 2px;
 }
 
-.unitContainer VisualElement {
+.unit VisualElement {
     height: 100%;
     width: 100%;
     background-color: rgb(64, 255, 0);
+}
+
+.yellowCardContainer {
+    height: 20%;
+    width: 100%;
+    flex-direction: row;
+    align-items: flex-start;
+    overflow: hidden;
+}
+
+.teamContainer {
+    width: 100%;
+    height: 100%;
+}
+
+.yellowCard {
+    background-color: rgb(255, 207, 61);
+    height: 100%;
+    padding-right: 0;
+    padding-left: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin-right: 3%;
+    width: auto;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+.yellowCard Label {
+    padding-top: 1%;
+    padding-right: 1%;
+    padding-bottom: 1%;
+    padding-left: 1%;
+    font-size: 100%;
+    -unity-font-style: bold;
+    background-color: rgba(255, 255, 255, 0);
+    align-self: center;
 }
