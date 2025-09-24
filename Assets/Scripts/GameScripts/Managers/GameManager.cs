@@ -40,6 +40,8 @@ public class GameManager : MonoBehaviour
     [SerializeField] private Material zoneMaterial;
     [Space(10)]
     [Header("Game Settings")]
+    [Header("General Settings")]
+    public int maxYellowCards; // maximum number of yellow cards a team can receive before losing the round
     [Header("Commands Settings")]
     [SerializeField] int command1UnitCount; // number of units in command 1
     [SerializeField] Gradient command1Color; // color of command 1
@@ -92,6 +94,19 @@ public class GameManager : MonoBehaviour
     bool gamePaused = false;
     [HideInInspector]
     public bool gameEnded = false;
+
+    public void CheckForWin()
+    {
+        if (unitManager.TryGetWinningTeam(out int winningTeamId))
+        {
+            if (winningTeamId == -1)
+                Debug.Log("The game ended in a draw!");
+            else
+                Debug.Log($"Team {winningTeamId} has won the game!");
+
+            gameEnded = true;
+        }
+    }
 
     private void OnValidate()
     {
@@ -153,7 +168,7 @@ public class GameManager : MonoBehaviour
         zoneGameObject = Instantiate(zonePrefab, new Vector3(0f, 0f, -9f), Quaternion.Euler(-90, 0, 0));
         zoneGameObject.transform.localScale = new Vector3(MAP_SIZE * 0.5f, 1, MAP_SIZE * 0.5f);
 
-        uiManager = new UIManager(uiDocument);
+        uiManager = new UIManager(uiDocument, maxYellowCards);
         unitManager = new UnitManager(this, uiManager, particleParent.transform);
         cameraManager = new CameraManager(unitManager, Camera.main, MAP_SIZE);
         mapGenerator = new MapGenerator(unlitMaterial);
@@ -179,18 +194,11 @@ public class GameManager : MonoBehaviour
         zoneMaterial.SetFloat("_ZoneSize", zoneSize);
 
         unitManager.UpdateCommands();
+
+        if(gameEnded) return; //skip the rest of the update if the game has ended after updating the commands
+
         unitManager.RemoveDeadUnits();
-
-        // check for winning team and end the game
-        if (unitManager.TryGetWinningTeam(out int winningTeamId))
-        {
-            if (winningTeamId == -1)
-                Debug.Log("The game ended in a draw!");
-            else
-                Debug.Log($"Team {winningTeamId} has won the game!");
-
-            gameEnded = true;
-        }
+        CheckForWin();// check for winning team and end the game
     }
     private void CreateCommand<CustomUnit, CustomCommand>(int teamId, GameObject unitPrefab, int numberOfUnits, GameMap map, Vector2 spawnLocation, Gradient teamColor, ref GameObject parent)
         where CustomUnit : Unit<CustomUnit>
@@ -247,7 +255,7 @@ public class GameManager : MonoBehaviour
             unitManager.MapGameObjectWithUnitData(gameObject, unitData);
 
             //add unit to ui
-            uiManager.CreateUnitContainer(teamId, unitId, unitId.ToString(), unitColor);
+            uiManager.CreateUnitElement(teamId, unitId, unitId.ToString(), unitColor);
         }
 
         //add command to the commands dictionary
