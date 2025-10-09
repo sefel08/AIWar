@@ -8,14 +8,16 @@ public class EnemyData
     public float health; // The current health of the enemy
 
     public Vector2 bestShootingPosition; // The point on the target that, when aimed at, gives the highest chance of hitting
+    public float seenConeAngle; // The angle of enemy that the unit can see. Look at the discord for more information.
 
-    public EnemyData(UnitData enemyUnitData, Vector2 bestShootingPosition)
+    public EnemyData(UnitData enemyUnitData, Vector2 bestShootingPosition, float seenConeAngle)
     {
         this.position = enemyUnitData.Position;
         this.rotation = enemyUnitData.Rotation;
         this.direction = enemyUnitData.Direction;
         this.health = enemyUnitData.health;
         this.bestShootingPosition = bestShootingPosition;
+        this.seenConeAngle = seenConeAngle;
     }
 }
 

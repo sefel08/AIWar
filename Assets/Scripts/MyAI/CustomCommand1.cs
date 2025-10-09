@@ -17,6 +17,10 @@ public class CustomCommand1 : Command<CustomUnit1>, ICommand
 
             if (info.isAlive == false) continue;
 
+            List<EnemyData> visibleEnemies = unit.GetVisibleEnemies();
+            if (visibleEnemies.Count > 0)
+                Debug.Log("Cone: " + visibleEnemies[0].seenConeAngle);
+
             Vector2 moveDirection = ((Input.GetAxis("Horizontal") * Vector2.right) +
                                     (Input.GetAxis("Vertical") * Vector2.up)).normalized;
 

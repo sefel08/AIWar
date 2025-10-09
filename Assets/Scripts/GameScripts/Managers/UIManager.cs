@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -25,6 +26,7 @@ public class UIManager
     Dictionary<int, VisualElement> yellowCardContainers;
 
     VisualElement mainContainer;
+    Label message;
 
     public UIManager(UIDocument document, int maxYellowCards)
     {
@@ -37,11 +39,19 @@ public class UIManager
         VisualElement root = document.rootVisualElement;
         root.Clear();
 
+        message = new Label("");
+        message.AddToClassList("messageLabel");
+        root.Add(message);
+
         mainContainer = new VisualElement();
         mainContainer.AddToClassList("mainContainer");
         root.Add(mainContainer);
     }
 
+    public void SetMessage(string text)
+    {
+        message.text = text;
+    }
     public void AddYellowCard(int teamId, string cardText, bool redCard)
     {
         var yellowCard = new VisualElement();

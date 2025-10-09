@@ -115,9 +115,10 @@ public class UnitManager
     /// </summary>
     /// <param name="teamId"></param>
     /// <returns></returns>
-    public bool TryGetWinningTeam(out int teamId)
+    public bool TryGetWinningTeam(out int teamId, out bool restart)
     {
         teamId = -2; // -2 means game is not over yet
+        restart = false; // if it was first red card of command, restart the round
 
         // check if game is over (only one team left)
         List<CommandData> aliveCommands = new List<CommandData>();
@@ -126,7 +127,16 @@ public class UnitManager
         {
             CommandData commandData = pair.Item2;
             if (commandData.unitDataList.Count > 0 && commandData.yellowCardCount <= gameManager.maxYellowCards) aliveCommands.Add(commandData);
-            else deadCommands.Add(commandData);
+            else
+            {
+                Team team = gameManager.teams[commandData.teamId];
+                if (commandData.yellowCardCount > gameManager.maxYellowCards && team.hasRedCard == false)
+                {
+                    team.hasRedCard = true;
+                    restart = true;
+                }
+                deadCommands.Add(commandData);
+            }
         }
 
         if (aliveCommands.Count > 0 && deadCommands.Count > 0)
@@ -170,7 +180,7 @@ public class UnitManager
             else
             {
                 uiManager.AddYellowCard(commandData.teamId, "Disqualified", true);
-                Debug.Log($"Command {commandData.teamId} has been disqualified for receiving {commandData.yellowCardCount} yellow cards.");
+                Debug.Log($"Command {commandData.teamId} has lost the round for receiving {commandData.yellowCardCount} yellow cards.");
                 gameManager.CheckForWin();
             }
         }
@@ -317,10 +327,10 @@ public class UnitManager
         {
             foreach (var enemy in commandData.unitDataList.Values)
             {
-                Vector2? enemyPosition = GetVisibleEnemyPoint(enemy, enemy.gameObject);
-                if (enemyPosition.HasValue) // check if the enemy is visible
+                Vector2? enemyBestShootingPosition = GetVisibleEnemyPoint(enemy, enemy.gameObject, out float coneAngle);
+                if (enemyBestShootingPosition.HasValue) // check if the enemy is visible
                 {
-                    EnemyData enemyData = new EnemyData(enemy, enemyPosition.Value);
+                    EnemyData enemyData = new EnemyData(enemy, enemyBestShootingPosition.Value, coneAngle);
                     enemiesInSight.Add(enemyData);
                 }
             }
@@ -329,8 +339,9 @@ public class UnitManager
         return enemiesInSight;
 
 
-        Vector2? GetVisibleEnemyPoint(UnitData enemyData, GameObject enemyGameObject)
+        Vector2? GetVisibleEnemyPoint(UnitData enemyData, GameObject enemyGameObject, out float coneAngle)
         {
+            coneAngle = 0f;
             Vector2 unitPosition = unitData.Position;
             Vector2 enemyPosition = enemyData.Position;
             Vector2 direction = (enemyPosition - unitPosition).normalized;
@@ -400,6 +411,7 @@ public class UnitManager
             if (gameManager.showEnemiesInSightBestShootingPoint)
                 Debug.DrawLine(unitPosition, (leftPoint + rightPoint) / 2, Color.red);
 
+            coneAngle = Vector2.Angle(leftPoint - unitPosition, rightPoint - unitPosition);
             return (leftPoint + rightPoint) / 2; //return avarage of both points as the best shooting position
 
             Vector2 GetPointCloserToCenter(Vector2 startPoint)

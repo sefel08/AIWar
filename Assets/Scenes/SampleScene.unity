@@ -688,7 +688,8 @@ MonoBehaviour:
   unlitMaterial: {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
   zoneMaterial: {fileID: 2100000, guid: 1d22be14b88956d488330d4422a39161, type: 2}
   maxYellowCards: 5
-  command1UnitCount: 9
+  pointsToWin: 3
+  command1UnitCount: 3
   command1Color:
     serializedVersion: 2
     key0: {r: 0.4637405, g: 0.3448736, b: 0.4716981, a: 1}
@@ -719,7 +720,7 @@ MonoBehaviour:
     m_ColorSpace: -1
     m_NumColorKeys: 2
     m_NumAlphaKeys: 2
-  command2UnitCount: 9
+  command2UnitCount: 3
   command2Color:
     serializedVersion: 2
     key0: {r: 0, g: 0.36071038, b: 0.6132076, a: 1}
@@ -750,11 +751,11 @@ MonoBehaviour:
     m_ColorSpace: -1
     m_NumColorKeys: 2
     m_NumAlphaKeys: 2
-  MAP_SIZE: 130
-  ELEMENTS_SPACING: 0
-  MIN_ELEMENT_SIZE: 5
-  MAX_ELEMENT_SIZE: 15
-  MAP_PRECISION: 200
+  MAP_SIZE: 100
+  ELEMENTS_SPACING: 3
+  MIN_ELEMENT_SIZE: 10
+  MAX_ELEMENT_SIZE: 30
+  MAP_PRECISION: 1000
   mapColor:
     serializedVersion: 2
     key0: {r: 0.4811321, g: 0.4811321, b: 0.4811321, a: 1}
@@ -785,7 +786,7 @@ MonoBehaviour:
     m_ColorSpace: -1
     m_NumColorKeys: 2
     m_NumAlphaKeys: 2
-  START_ZONE_SIZE: 130
+  START_ZONE_SIZE: 150
   ZONE_GROWTH_RATE: 2
   ZONE_DAMAGE: 10
   FIELD_OF_VIEW: 160
@@ -793,7 +794,7 @@ MonoBehaviour:
   UNIT_ROTATION_SPEED: 170
   ENEMY_POINT_PRECISION: 8
   SHOOTING_DAMAGE: 25
-  SHOOTING_ACCURACY: 0.1
+  SHOOTING_ACCURACY: 0.08
   SHOOTING_COOLDOWN: 0.25
   UNIT_SIZE: 1.5
   zoneSize: 0

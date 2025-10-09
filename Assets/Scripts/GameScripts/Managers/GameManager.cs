@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -42,6 +42,7 @@ public class GameManager : MonoBehaviour
     [Header("Game Settings")]
     [Header("General Settings")]
     public int maxYellowCards; // maximum number of yellow cards a team can receive before losing the round
+    [SerializeField] private int pointsToWin; // number of points a team needs to win the game
     [Header("Commands Settings")]
     [SerializeField] int command1UnitCount; // number of units in command 1
     [SerializeField] Gradient command1Color; // color of command 1
@@ -87,22 +88,46 @@ public class GameManager : MonoBehaviour
     private GameObject particleParent;
     private GameObject mapParent;
     private GameObject zoneGameObject;
-    private GameObject command1Parent;
-    private GameObject command2Parent;
 
+    // Game States
+    int round = 1;
     bool gameStarted = false;
     bool gamePaused = false;
     [HideInInspector]
     public bool gameEnded = false;
 
+    // Teams
+    public Dictionary<int, Team> teams = new Dictionary<int, Team>();
+
     public void CheckForWin()
     {
-        if (unitManager.TryGetWinningTeam(out int winningTeamId))
+        if (unitManager.TryGetWinningTeam(out int winningTeamId, out bool restart))
         {
+            if (restart)
+            {
+                uiManager.SetMessage("First red card! Press R to restart the round.");
+                gameEnded = true;
+                return;
+            }
+
             if (winningTeamId == -1)
-                Debug.Log("The game ended in a draw!");
-            else
-                Debug.Log($"Team {winningTeamId} has won the game!");
+            {
+                uiManager.SetMessage("The game ended in a draw!");
+                gameEnded = true;
+                return;
+            }
+            
+            Team winnerTeam = teams[winningTeamId];
+            winnerTeam.points++;
+
+            if (winnerTeam.points >= pointsToWin)
+            {
+                uiManager.SetMessage($"Team {winningTeamId} has won the game");
+            }
+            else // start a new round
+            {
+                uiManager.SetMessage($"Team {winningTeamId} has won the round! Press R to start a new round.");
+            }
 
             gameEnded = true;
         }
@@ -120,6 +145,26 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
+        teams[1] = new Team()
+        {
+            teamId = 1,
+            unitType = typeof(CustomUnit1),
+            commandType = typeof(CustomCommand1),
+            teamColor = command1Color,
+            spawnPoint = new Vector2(0, MAP_SIZE / 2f + 5f),
+            unitCount = command1UnitCount
+        };
+
+        teams[2] = new Team()
+        {
+            teamId = 2,
+            unitType = typeof(CustomUnit2),
+            commandType = typeof(CustomCommand2),
+            teamColor = command2Color,
+            spawnPoint = new Vector2(0, -MAP_SIZE / 2f - 5f),
+            unitCount = command2UnitCount
+        };
+
         InitializeNewGame();
     }
     private void TogglePauseGame()
@@ -160,8 +205,13 @@ public class GameManager : MonoBehaviour
         if (!particleParent.IsDestroyed()) Destroy(particleParent);
         if (!mapParent.IsDestroyed()) Destroy(mapParent);
         if (!zoneGameObject.IsDestroyed()) Destroy(zoneGameObject);
-        if (!command1Parent.IsDestroyed()) Destroy(command1Parent);
-        if (!command2Parent.IsDestroyed()) Destroy(command2Parent);
+        foreach (Team team in teams.Values)
+        {
+            foreach (Transform child in team.parentGameObject.transform)
+            {
+                GameObject.Destroy(child.gameObject);
+            }
+        }
 
         particleParent = new GameObject("Particles");
         mapParent = new GameObject("Map");
@@ -177,9 +227,13 @@ public class GameManager : MonoBehaviour
         gameMap = data.Item1; //get the game map
         gameMapData = data.Item2; //get the game map data
 
-        CreateCommand<CustomUnit1, CustomCommand1>(1, unitPrefab, command1UnitCount, gameMap, new Vector2(0, MAP_SIZE / 2f + 5f), command1Color, ref command1Parent);
-        CreateCommand<CustomUnit2, CustomCommand2>(2, unitPrefab, command2UnitCount, gameMap, new Vector2(0, -MAP_SIZE / 2f - 5f), command2Color, ref command2Parent);
-        
+        foreach(Team team in teams.Values)
+        {
+            var method = typeof(GameManager).GetMethod("CreateCommand", BindingFlags.NonPublic | BindingFlags.Instance);
+            var genericMethod = method.MakeGenericMethod(team.unitType, team.commandType);
+            genericMethod.Invoke(this, new object[] { team, unitPrefab, gameMap });
+        }
+
         zoneSize = START_ZONE_SIZE; //set the initial zone size
         zoneMaterial.SetFloat("_ZoneSize", zoneSize);
     }
@@ -200,28 +254,30 @@ public class GameManager : MonoBehaviour
         unitManager.RemoveDeadUnits();
         CheckForWin();// check for winning team and end the game
     }
-    private void CreateCommand<CustomUnit, CustomCommand>(int teamId, GameObject unitPrefab, int numberOfUnits, GameMap map, Vector2 spawnLocation, Gradient teamColor, ref GameObject parent)
+    private void CreateCommand<CustomUnit, CustomCommand>(Team team, GameObject unitPrefab, GameMap map)
         where CustomUnit : Unit<CustomUnit>
         where CustomCommand : Command<CustomUnit>, ICommand
     {
+        int teamId = team.teamId;
+        int numberOfUnits = team.unitCount;
+        Vector2 spawnLocation = team.spawnPoint;
+
         //create command
         CustomCommand command = (CustomCommand)Activator.CreateInstance(typeof(CustomCommand));
         command.gameMap = new GameMap(map); //give a copy of the map to the command
         command.gameSettings = GetGameSettings(); //give a copy of the game settings to the command
         CommandData commandData = new CommandData(teamId);
 
-        parent = new GameObject("Command" + teamId);
-
         uiManager.CreateTeamContainer(teamId);
 
         //create units
         for (int unitId = 0; unitId < numberOfUnits; unitId++)
         {
-            Color unitColor = teamColor.Evaluate((float)unitId / numberOfUnits);
+            Color unitColor = team.teamColor.Evaluate((float)unitId / numberOfUnits);
             Vector2 directionToCenter = (Vector2.zero - spawnLocation).normalized;
             Vector2 spawnPosition = spawnLocation + (new Vector2(spawnLocation.y, -spawnLocation.x) * unitId/100f);
             
-            GameObject gameObject = Instantiate(unitPrefab, spawnPosition, Quaternion.Euler(0, 0, Mathf.Atan2(directionToCenter.y, directionToCenter.x) * Mathf.Rad2Deg), parent.transform);
+            GameObject gameObject = Instantiate(unitPrefab, spawnPosition, Quaternion.Euler(0, 0, Mathf.Atan2(directionToCenter.y, directionToCenter.x) * Mathf.Rad2Deg), team.parentGameObject.transform);
             gameObject.name = $"Unit({unitId})Team({teamId})";
 
             Rigidbody2D rigidbody = gameObject.AddComponent<Rigidbody2D>();
