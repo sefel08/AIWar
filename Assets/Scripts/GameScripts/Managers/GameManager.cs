@@ -8,16 +8,6 @@ using UnityEngine.UIElements;
 
 public class GameManager : MonoBehaviour
 {
-    [Header("UI properties")]
-    [SerializeField] UIDocument uiDocument;
-    [Header("Debug")]
-    [Header("Static Variables")]
-    [SerializeField] int debugInt1;
-    [SerializeField] int debugInt2;
-    [SerializeField] float debugFloat1;
-    [SerializeField] float debugFloat2;
-    [SerializeField] bool test1;
-    [SerializeField] bool test2;
     [Header("Debug tools")]
     public bool showUnitsFieldOfView;
     public bool showEnemiesInSight;
@@ -38,9 +28,12 @@ public class GameManager : MonoBehaviour
     [Header("Materials")]
     [SerializeField] private Material unlitMaterial;
     [SerializeField] private Material zoneMaterial;
+    [Header("UI properties")]
+    [SerializeField] UIDocument uiDocument;
     [Space(10)]
     [Header("Game Settings")]
     [Header("General Settings")]
+    public bool developerMode; // if true, does not end the game on errors
     public int maxYellowCards; // maximum number of yellow cards a team can receive before losing the round
     [SerializeField] private int pointsToWin; // number of points a team needs to win the game
     [Header("Commands Settings")]
@@ -90,7 +83,18 @@ public class GameManager : MonoBehaviour
     private GameObject zoneGameObject;
 
     // Game States
-    int round = 1;
+    int round = 0;
+    string scoreText { get
+        {
+            string text = "";
+            foreach (var team in teams.Values)
+            {
+                text += $"{team.points} : ";
+            }
+            text = text.Remove(text.Length - 3); // remove the last " : "
+            return text;
+        }
+    }
     bool gameStarted = false;
     bool gamePaused = false;
     [HideInInspector]
@@ -120,27 +124,17 @@ public class GameManager : MonoBehaviour
             Team winnerTeam = teams[winningTeamId];
             winnerTeam.points++;
 
-            if (winnerTeam.points >= pointsToWin)
+            if (winnerTeam.points >= pointsToWin && !developerMode)
             {
-                uiManager.SetMessage($"Team {winningTeamId} has won the game");
+                uiManager.SetMessage($"Team {winningTeamId} has won the game\n{scoreText}");
             }
             else // start a new round
             {
-                uiManager.SetMessage($"Team {winningTeamId} has won the round! Press R to start a new round.");
+                uiManager.SetMessage($"Team {winningTeamId} has won the round!\n\n{scoreText}\n\nPress R to start a new round.");
             }
 
             gameEnded = true;
         }
-    }
-
-    private void OnValidate()
-    {
-        DebugVariables.testInt1 = debugInt1;
-        DebugVariables.testInt2 = debugInt2;
-        DebugVariables.testFloat1 = debugFloat1;
-        DebugVariables.testFloat2 = debugFloat2;
-        DebugVariables.test1 = test1;
-        DebugVariables.test2 = test2;
     }
 
     void Start()
@@ -236,11 +230,15 @@ public class GameManager : MonoBehaviour
 
         zoneSize = START_ZONE_SIZE; //set the initial zone size
         zoneMaterial.SetFloat("_ZoneSize", zoneSize);
+
+        round++;
+        uiManager.SetMessage($"Round {round}");
     }
     private void StartGame()
     {
         unitManager.StartCommands();
         gameStarted = true;
+        uiManager.SetMessage("");
     }
     private void UpdateGame()
     {

@@ -79,7 +79,10 @@ public class UnitManager
                     DamageUnit(unitData, gameManager.ZONE_DAMAGE * Time.deltaTime);
             }
 
-            SafelyRunCommandMethod(pair.Item1.Update, commandData);
+            if (gameManager.developerMode) 
+                pair.Item1.Update(); //in developer mode, run the update without try-catch to see the errors
+            else
+                SafelyRunCommandMethod(pair.Item1.Update, commandData);
         }
     }
     public void RemoveDeadUnits()
