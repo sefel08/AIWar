@@ -16,6 +16,13 @@ public class UnitData
     public float health;
     public float nextShootTime; // cooldown for shooting
     public bool isAlive { get { return health > 0; } }
+    public bool canShoot { get { return Time.time >= nextShootTime; } }
+    public float shootCooldown { get 
+        { 
+            float cooldown = nextShootTime - Time.time; 
+            return cooldown < 0 ? 0 : cooldown; 
+        } 
+    }
 
     public UnitData(IUnit unit, Rigidbody2D rigidbody, GameObject gameObject)
     {

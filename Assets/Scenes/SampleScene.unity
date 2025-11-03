@@ -726,7 +726,7 @@ MonoBehaviour:
   showEnemiesInSightBounds: 0
   showEnemiesInSightBestShootingPoint: 0
   showShootingRays: 0
-  showUnitRays: 0
+  showUnitRays: 1
   unitRayDuration: 0
   shootingRayDuration: 0.3
   unitPrefab: {fileID: 3289567134752518329, guid: 595ef0bb464318442a37e2f45142c49e, type: 3}
@@ -738,9 +738,10 @@ MonoBehaviour:
   zoneMaterial: {fileID: 2100000, guid: 1d22be14b88956d488330d4422a39161, type: 2}
   uiDocument: {fileID: 767994886}
   developerMode: 1
+  hideMessages: 0
   maxYellowCards: 5
   pointsToWin: 3
-  command1UnitCount: 3
+  command1UnitCount: 15
   command1Color:
     serializedVersion: 2
     key0: {r: 0.4637405, g: 0.3448736, b: 0.4716981, a: 1}
@@ -771,7 +772,7 @@ MonoBehaviour:
     m_ColorSpace: -1
     m_NumColorKeys: 2
     m_NumAlphaKeys: 2
-  command2UnitCount: 3
+  command2UnitCount: 15
   command2Color:
     serializedVersion: 2
     key0: {r: 0, g: 0.36071038, b: 0.6132076, a: 1}
@@ -802,11 +803,11 @@ MonoBehaviour:
     m_ColorSpace: -1
     m_NumColorKeys: 2
     m_NumAlphaKeys: 2
-  MAP_SIZE: 100
+  MAP_SIZE: 180
   ELEMENTS_SPACING: 3
   MIN_ELEMENT_SIZE: 10
   MAX_ELEMENT_SIZE: 30
-  MAP_PRECISION: 1000
+  MAP_PRECISION: 20
   mapColor:
     serializedVersion: 2
     key0: {r: 0.4811321, g: 0.4811321, b: 0.4811321, a: 1}
@@ -837,7 +838,7 @@ MonoBehaviour:
     m_ColorSpace: -1
     m_NumColorKeys: 2
     m_NumAlphaKeys: 2
-  START_ZONE_SIZE: 150
+  START_ZONE_SIZE: 200
   ZONE_GROWTH_RATE: 2
   ZONE_DAMAGE: 10
   FIELD_OF_VIEW: 160

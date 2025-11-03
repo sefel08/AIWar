@@ -19,10 +19,12 @@ public class UnitManager
     //constants
     private const float PROJECTILE_DISTANCE = 120f; // distance the projectile will travel if it doesn't hit anything
 
+    //pools
     GameObjectPool<ProjectileScript> projectilePool; // pool for projectiles to reuse them instead of creating new ones
     ParticlePool hitParticlePool;
     ParticlePool bloodParticlePool;
 
+    //managers
     GameManager gameManager;
     UIManager uiManager;
 
@@ -136,6 +138,7 @@ public class UnitManager
                 if (commandData.yellowCardCount > gameManager.maxYellowCards && team.hasRedCard == false)
                 {
                     team.hasRedCard = true;
+                    teamId = team.teamId;
                     restart = true;
                 }
                 deadCommands.Add(commandData);
@@ -229,6 +232,14 @@ public class UnitManager
     public bool IsUnitAlive(IUnit unit)
     {
         return commands[unit.TeamId].Item2.unitDataList.TryGetValue(unit.UnitId, out UnitData data);
+    }
+    public bool CanUnitShoot(IUnit unit)
+    {
+        return GetUnitData(unit).canShoot;
+    }
+    public float GetUnitShootCooldown(IUnit unit)
+    {
+        return GetUnitData(unit).shootCooldown;
     }
 
     // Actions for Unit class

@@ -5,6 +5,7 @@ using UnityEngine.UIElements;
 
 public class UIManager
 {
+    GameManager gameManager;
     Gradient healthGradient = new Gradient
     {
         colorKeys = new GradientColorKey[]
@@ -28,8 +29,9 @@ public class UIManager
     VisualElement mainContainer;
     Label message;
 
-    public UIManager(UIDocument document, int maxYellowCards)
+    public UIManager(UIDocument document, int maxYellowCards, GameManager gameManager)
     {
+        this.gameManager = gameManager;
         yellowCardContainers = new Dictionary<int, VisualElement>();
         unitContainers = new Dictionary<int, VisualElement>();
         healthBarMap = new Dictionary<int, Dictionary<int, VisualElement>>();
@@ -50,6 +52,7 @@ public class UIManager
 
     public void SetMessage(string text)
     {
+        if (gameManager.hideMessages) return;
         message.text = text;
     }
     public void AddYellowCard(int teamId, string cardText, bool redCard)

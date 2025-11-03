@@ -16,6 +16,6 @@ public class HitData
     }
     public override string ToString()
     {
-        return $"HitPoint: {hitPoint}, HitDistance: {hitDistance}, HitNormal: {hitNormal}, ElementId: {elementId}";
+        return $"[HitPoint: {hitPoint}, HitDistance: {hitDistance}, HitNormal: {hitNormal}, ElementId: {elementId}]";
     }
 }

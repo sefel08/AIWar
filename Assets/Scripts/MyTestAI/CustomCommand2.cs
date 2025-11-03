@@ -15,6 +15,8 @@ public class CustomCommand2 : Command<CustomUnit2>, ICommand
     {
         foreach (var unit in units.Values)
         {
+            Debug.DrawRay(unit.Position, unit.Direction, Color.green);
+
             if (unit.ZoneDistance < 1f)
             {
                 unit.currentDirection = (Vector2.zero - unit.Position).normalized;

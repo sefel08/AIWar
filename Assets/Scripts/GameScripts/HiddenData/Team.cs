@@ -6,6 +6,7 @@ public class Team
     public bool hasRedCard = false;
 
     public int teamId;
+    public string teamName;
     public Type unitType;
     public Type commandType;
     public Gradient teamColor;

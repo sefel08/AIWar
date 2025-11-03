@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class MapGenerator
@@ -15,11 +16,26 @@ public class MapGenerator
     {
         GameMap gameMap = new GameMap();
         GameMapData gameMapData = new GameMapData(mapParent);
+        
+        bool smallerCircle = false;
 
         int elementNumber = 1;
         int numberOfTrials = 0;
-        while (numberOfTrials < maxNumberOfTrials)
+        //numberOfTrials < maxNumberOfTrials
+        while (true)
         {
+            if(numberOfTrials > maxNumberOfTrials)
+            {
+                if (smallerCircle)
+                {
+                    break;
+                }
+                smallerCircle = true;
+                numberOfTrials = 0;
+                size *= 0.45f;
+                maxNumberOfTrials = 300;
+            }
+
             Color objectColor = mapColor.Evaluate(Random.Range(0f, 1f));
             GameObject gameObject = CreateRandomGameObject(gameMapData.mapContainer.transform, minElementSize, maxElementSize, objectColor, out PolygonCollider2D collider);
 

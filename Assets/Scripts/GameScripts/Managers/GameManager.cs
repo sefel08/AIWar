@@ -2,22 +2,32 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Reflection;
+using Unity.Profiling;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.Profiling;
 using UnityEngine.UIElements;
 
 public class GameManager : MonoBehaviour
 {
     [Header("Debug tools")]
+    [Tooltip("Show debug fields of view of the units")]
     public bool showUnitsFieldOfView;
+    [Tooltip("Show debug lines to the enemies in sight")]
     public bool showEnemiesInSight;
+    [Tooltip("Show debug shooting bounds around the enemies in sight")]
     public bool showEnemiesInSightBounds;
+    [Tooltip("Show debug lines to the best shooting point of the enemies in sight")]
     public bool showEnemiesInSightBestShootingPoint;
+    [Tooltip("Show debug shoot rays")]
     public bool showShootingRays;
+    [Tooltip("Show debug rays cast by the units")]
     public bool showUnitRays;
     [Min(0f)]
+    [Tooltip("How long debug unit rays will be visible in seconds")]
     public float unitRayDuration; // how long debug unit rays will be visible in seconds
     [Min(0f)]
+    [Tooltip("How long debug shooting rays will be visible in seconds")]
     public float shootingRayDuration; // how long debug shooting rays will be visible in seconds
     [Header("Prefabs")]
     [SerializeField] GameObject unitPrefab;
@@ -34,6 +44,7 @@ public class GameManager : MonoBehaviour
     [Header("Game Settings")]
     [Header("General Settings")]
     public bool developerMode; // if true, does not end the game on errors
+    public bool hideMessages; // if true, hides all UI messages
     public int maxYellowCards; // maximum number of yellow cards a team can receive before losing the round
     [SerializeField] private int pointsToWin; // number of points a team needs to win the game
     [Header("Commands Settings")]
@@ -105,32 +116,32 @@ public class GameManager : MonoBehaviour
 
     public void CheckForWin()
     {
-        if (unitManager.TryGetWinningTeam(out int winningTeamId, out bool restart))
+        if (unitManager.TryGetWinningTeam(out int teamId, out bool restart))
         {
             if (restart)
             {
-                uiManager.SetMessage("First red card! Press R to restart the round.");
+                uiManager.SetMessage($"First red card of team {teams[teamId].teamName}!\nPress R to restart the round.");
                 gameEnded = true;
                 return;
             }
 
-            if (winningTeamId == -1)
+            if (teamId == -1)
             {
                 uiManager.SetMessage("The game ended in a draw!");
                 gameEnded = true;
                 return;
             }
             
-            Team winnerTeam = teams[winningTeamId];
+            Team winnerTeam = teams[teamId];
             winnerTeam.points++;
 
             if (winnerTeam.points >= pointsToWin && !developerMode)
             {
-                uiManager.SetMessage($"Team {winningTeamId} has won the game\n{scoreText}");
+                uiManager.SetMessage($"Team {teams[teamId].teamName} has won the game\n\n{scoreText}");
             }
             else // start a new round
             {
-                uiManager.SetMessage($"Team {winningTeamId} has won the round!\n\n{scoreText}\n\nPress R to start a new round.");
+                uiManager.SetMessage($"Team {teams[teamId].teamName} has won the round!\n\n{scoreText}\n\nPress R to start a new round.");
             }
 
             gameEnded = true;
@@ -139,23 +150,38 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
+        Profiler.SetAreaEnabled(ProfilerArea.Memory, false);
+
+        if (TeamSelection.teams.Count < 2)
+        {
+            Debug.LogError("Not enough teams selected! Please select at least 2 teams.");
+            return;
+        }
+        if(TeamSelection.teamNames.Count < 2)
+        {
+            Debug.LogError("Not enough team names selected! Please select at least 2 team names.");
+            return;
+        }
+
         teams[1] = new Team()
         {
             teamId = 1,
-            unitType = typeof(CustomUnit1),
-            commandType = typeof(CustomCommand1),
+            teamName = TeamSelection.teamNames[0],
+            unitType = TeamSelection.teams[0].Item1,
+            commandType = TeamSelection.teams[0].Item2,
             teamColor = command1Color,
-            spawnPoint = new Vector2(0, MAP_SIZE / 2f + 5f),
+            spawnPoint = new Vector2(0, MAP_SIZE * 0.85f),
             unitCount = command1UnitCount
         };
 
         teams[2] = new Team()
         {
             teamId = 2,
-            unitType = typeof(CustomUnit2),
-            commandType = typeof(CustomCommand2),
+            teamName = TeamSelection.teamNames[1],
+            unitType = TeamSelection.teams[1].Item1,
+            commandType = TeamSelection.teams[1].Item2,
             teamColor = command2Color,
-            spawnPoint = new Vector2(0, -MAP_SIZE / 2f - 5f),
+            spawnPoint = new Vector2(0, -MAP_SIZE * 0.85f),
             unitCount = command2UnitCount
         };
 
@@ -212,7 +238,7 @@ public class GameManager : MonoBehaviour
         zoneGameObject = Instantiate(zonePrefab, new Vector3(0f, 0f, -9f), Quaternion.Euler(-90, 0, 0));
         zoneGameObject.transform.localScale = new Vector3(MAP_SIZE * 0.5f, 1, MAP_SIZE * 0.5f);
 
-        uiManager = new UIManager(uiDocument, maxYellowCards);
+        uiManager = new UIManager(uiDocument, maxYellowCards, this);
         unitManager = new UnitManager(this, uiManager, particleParent.transform);
         cameraManager = new CameraManager(unitManager, Camera.main, MAP_SIZE);
         mapGenerator = new MapGenerator(unlitMaterial);
