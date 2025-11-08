@@ -440,6 +440,135 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &885132190
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 885132192}
+  - component: {fileID: 885132191}
+  m_Layer: 0
+  m_Name: AudioManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!82 &885132191
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 885132190}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 0
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+--- !u!4 &885132192
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 885132190}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 15.707715, y: -63.238216, z: -0.9198434}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1401288152
 GameObject:
   m_ObjectHideFlags: 0
@@ -737,11 +866,16 @@ MonoBehaviour:
   unlitMaterial: {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
   zoneMaterial: {fileID: 2100000, guid: 1d22be14b88956d488330d4422a39161, type: 2}
   uiDocument: {fileID: 767994886}
+  shootSounds:
+  - {fileID: 8300000, guid: 85b8d16b276c4b140a702c3f8c653fa8, type: 3}
+  - {fileID: 8300000, guid: dbeb6223f11235e43a65bbc207c9b553, type: 3}
+  - {fileID: 8300000, guid: 01dce65f528bdeb4ead3db6b2e540304, type: 3}
+  audioManager: {fileID: 885132191}
   developerMode: 1
   hideMessages: 0
   maxYellowCards: 5
   pointsToWin: 3
-  command1UnitCount: 15
+  command1UnitCount: 9
   command1Color:
     serializedVersion: 2
     key0: {r: 0.4637405, g: 0.3448736, b: 0.4716981, a: 1}
@@ -772,7 +906,7 @@ MonoBehaviour:
     m_ColorSpace: -1
     m_NumColorKeys: 2
     m_NumAlphaKeys: 2
-  command2UnitCount: 15
+  command2UnitCount: 9
   command2Color:
     serializedVersion: 2
     key0: {r: 0, g: 0.36071038, b: 0.6132076, a: 1}
@@ -803,8 +937,8 @@ MonoBehaviour:
     m_ColorSpace: -1
     m_NumColorKeys: 2
     m_NumAlphaKeys: 2
-  MAP_SIZE: 180
-  ELEMENTS_SPACING: 3
+  MAP_SIZE: 170
+  ELEMENTS_SPACING: 2
   MIN_ELEMENT_SIZE: 10
   MAX_ELEMENT_SIZE: 30
   MAP_PRECISION: 20
@@ -838,16 +972,18 @@ MonoBehaviour:
     m_ColorSpace: -1
     m_NumColorKeys: 2
     m_NumAlphaKeys: 2
-  START_ZONE_SIZE: 200
+  START_ZONE_SIZE: 190
+  ZONE_START_DELAY: 15
   ZONE_GROWTH_RATE: 2
-  ZONE_DAMAGE: 10
+  ZONE_DAMAGE: 5
   FIELD_OF_VIEW: 160
   UNIT_MOVE_SPEED: 7
-  UNIT_ROTATION_SPEED: 170
-  ENEMY_POINT_PRECISION: 8
-  SHOOTING_DAMAGE: 25
-  SHOOTING_ACCURACY: 0.08
-  SHOOTING_COOLDOWN: 0.25
+  UNIT_ROTATION_SPEED: 220
+  ENEMY_POINT_PRECISION: 7
+  SHOOTING_DAMAGE: 17
+  SHOOTING_RECOIL: 0.06
+  SHOOTING_RECOIL_WHEN_MOVING: 0.08
+  SHOOTING_COOLDOWN: 0.13
   UNIT_SIZE: 1.5
   zoneSize: 0
   gameEnded: 0
@@ -877,3 +1013,4 @@ SceneRoots:
   - {fileID: 1401288155}
   - {fileID: 767994887}
   - {fileID: 1465221410}
+  - {fileID: 885132192}

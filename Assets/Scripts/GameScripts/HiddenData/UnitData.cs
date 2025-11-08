@@ -15,6 +15,8 @@ public class UnitData
     public bool hasRotated;
     public float health;
     public float nextShootTime; // cooldown for shooting
+    public bool isMoving;
+
     public bool isAlive { get { return health > 0; } }
     public bool canShoot { get { return Time.time >= nextShootTime; } }
     public float shootCooldown { get 
@@ -28,6 +30,7 @@ public class UnitData
     {
         hasMoved = false;
         hasRotated = false;
+        isMoving = false;
         health = 100; // default health value
         nextShootTime = 0f; // initialize next shoot time
         this.unit = unit;

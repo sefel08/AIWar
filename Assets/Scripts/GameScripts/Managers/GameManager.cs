@@ -1,11 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Reflection;
-using Unity.Profiling;
 using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.Profiling;
 using UnityEngine.UIElements;
 
 public class GameManager : MonoBehaviour
@@ -40,6 +37,9 @@ public class GameManager : MonoBehaviour
     [SerializeField] private Material zoneMaterial;
     [Header("UI properties")]
     [SerializeField] UIDocument uiDocument;
+    [Header("Sound")]
+    [SerializeField] List<AudioClip> shootSounds;
+    [SerializeField] AudioSource audioManager;
     [Space(10)]
     [Header("Game Settings")]
     [Header("General Settings")]
@@ -61,6 +61,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private Gradient mapColor; // color of the map elements
     [Header("Zone Settings")]
     [SerializeField] private float START_ZONE_SIZE; // initial value of the zone
+    [SerializeField] private float ZONE_START_DELAY; // how long the zone will stay the same size before starting to shrink, used to give players time to spread out
     [SerializeField] private float ZONE_GROWTH_RATE; // how much the zone will grow each second, used to make the game more dynamic and force players to move towards the center of the map
     public float ZONE_DAMAGE; // how much damage the zone will deal to the units each second, used to make the game more dynamic and force players to move towards the center of the map
     [Header("Unit Settings")]
@@ -69,7 +70,8 @@ public class GameManager : MonoBehaviour
     public float UNIT_ROTATION_SPEED; // speed of the unit rotation
     public int ENEMY_POINT_PRECISION; // maximum points to test between enemy center and side
     public float SHOOTING_DAMAGE; // damage dealt by the unit when it shoots
-    public float SHOOTING_ACCURACY; // accuracy of the shooting, how much the bullet can deviate from the center of the unit in a random direction
+    public float SHOOTING_RECOIL; // accuracy of the shooting, how much the bullet can deviate from the center of the unit in a random direction
+    public float SHOOTING_RECOIL_WHEN_MOVING; // accuracy of the shooting when the unit is moving, how much the bullet can deviate from the center of the unit in a random direction
     public float SHOOTING_COOLDOWN; // time between shots in seconds
     
     [HideInInspector]
@@ -110,6 +112,7 @@ public class GameManager : MonoBehaviour
     bool gamePaused = false;
     [HideInInspector]
     public bool gameEnded = false;
+    private float zoneStartTime;
 
     // Teams
     public Dictionary<int, Team> teams = new Dictionary<int, Team>();
@@ -150,8 +153,6 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
-        Profiler.SetAreaEnabled(ProfilerArea.Memory, false);
-
         if (TeamSelection.teams.Count < 2)
         {
             Debug.LogError("Not enough teams selected! Please select at least 2 teams.");
@@ -239,7 +240,7 @@ public class GameManager : MonoBehaviour
         zoneGameObject.transform.localScale = new Vector3(MAP_SIZE * 0.5f, 1, MAP_SIZE * 0.5f);
 
         uiManager = new UIManager(uiDocument, maxYellowCards, this);
-        unitManager = new UnitManager(this, uiManager, particleParent.transform);
+        unitManager = new UnitManager(this, uiManager, particleParent.transform, audioManager, shootSounds);
         cameraManager = new CameraManager(unitManager, Camera.main, MAP_SIZE);
         mapGenerator = new MapGenerator(unlitMaterial);
 
@@ -265,18 +266,22 @@ public class GameManager : MonoBehaviour
         unitManager.StartCommands();
         gameStarted = true;
         uiManager.SetMessage("");
+        zoneStartTime = Time.time + ZONE_START_DELAY; //set the time when the zone will start shrinking
     }
     private void UpdateGame()
     {
-        zoneSize -= ZONE_GROWTH_RATE * Time.deltaTime; //reduce the zone size
-        zoneMaterial.SetFloat("_ZoneSize", zoneSize);
+        if (zoneStartTime < Time.time)
+        {
+            zoneSize -= ZONE_GROWTH_RATE * Time.deltaTime; //reduce the zone size
+            zoneMaterial.SetFloat("_ZoneSize", zoneSize);
+        }
 
         unitManager.UpdateCommands();
 
         if(gameEnded) return; //skip the rest of the update if the game has ended after updating the commands
 
         unitManager.RemoveDeadUnits();
-        CheckForWin();// check for winning team and end the game
+        CheckForWin(); // check for winning team and end the game
     }
     private void CreateCommand<CustomUnit, CustomCommand>(Team team, GameObject unitPrefab, GameMap map)
         where CustomUnit : Unit<CustomUnit>
@@ -354,7 +359,8 @@ public class GameManager : MonoBehaviour
             UNIT_MOVE_SPEED = UNIT_MOVE_SPEED,
             UNIT_ROTATION_SPEED = UNIT_ROTATION_SPEED,
             SHOOTING_DAMAGE = SHOOTING_DAMAGE,
-            SHOOTING_ACCURACY = SHOOTING_ACCURACY,
+            SHOOTING_RECOIL = SHOOTING_RECOIL,
+            SHOOTING_RECOIL_WHEN_MOVING = SHOOTING_RECOIL_WHEN_MOVING,
             SHOOTING_COOLDOWN = SHOOTING_COOLDOWN,
             UNIT_SIZE = UNIT_SIZE
         };

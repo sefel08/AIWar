@@ -35,4 +35,8 @@ public class Command<TUnit>
     /// A dictionary mapping each unit's ID to the direction from which unit heard a shot.
     /// </param>
     public virtual void ShotHeard(Dictionary<int, Vector2> unitIdsWithDirection) { }
+    /// <summary>
+    /// Method that is called when this command's team receives a red card.
+    /// </summary>
+    public virtual void OnRedCard() { }
 }

@@ -57,7 +57,7 @@ public class MapGenerator
             bool isValid = true;
             foreach (MapElementData element in gameMapData.elementsWithElementData.Values)
             {
-                if (Vector2.Distance(mapElementData.position, element.position) < (mapElementData.radius + element.radius + unitSize + elementSpacing))
+                if (Vector2.Distance(mapElementData.position, element.position) < (mapElementData.radius + element.radius + unitSize * 2f + elementSpacing))
                 {
                     isValid = false;
                     break;
