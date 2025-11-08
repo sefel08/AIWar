@@ -1,33 +1,30 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UIElements;
 
 public class GameManager : MonoBehaviour
 {
-    [Header("UI properties")]
-    [SerializeField] UIDocument uiDocument;
-    [Header("Debug")]
-    [Header("Static Variables")]
-    [SerializeField] int debugInt1;
-    [SerializeField] int debugInt2;
-    [SerializeField] float debugFloat1;
-    [SerializeField] float debugFloat2;
-    [SerializeField] bool test1;
-    [SerializeField] bool test2;
     [Header("Debug tools")]
+    [Tooltip("Show debug fields of view of the units")]
     public bool showUnitsFieldOfView;
+    [Tooltip("Show debug lines to the enemies in sight")]
     public bool showEnemiesInSight;
+    [Tooltip("Show debug shooting bounds around the enemies in sight")]
     public bool showEnemiesInSightBounds;
+    [Tooltip("Show debug lines to the best shooting point of the enemies in sight")]
     public bool showEnemiesInSightBestShootingPoint;
+    [Tooltip("Show debug shoot rays")]
     public bool showShootingRays;
+    [Tooltip("Show debug rays cast by the units")]
     public bool showUnitRays;
     [Min(0f)]
+    [Tooltip("How long debug unit rays will be visible in seconds")]
     public float unitRayDuration; // how long debug unit rays will be visible in seconds
     [Min(0f)]
+    [Tooltip("How long debug shooting rays will be visible in seconds")]
     public float shootingRayDuration; // how long debug shooting rays will be visible in seconds
     [Header("Prefabs")]
     [SerializeField] GameObject unitPrefab;
@@ -38,10 +35,18 @@ public class GameManager : MonoBehaviour
     [Header("Materials")]
     [SerializeField] private Material unlitMaterial;
     [SerializeField] private Material zoneMaterial;
+    [Header("UI properties")]
+    [SerializeField] UIDocument uiDocument;
+    [Header("Sound")]
+    [SerializeField] List<AudioClip> shootSounds;
+    [SerializeField] AudioSource audioManager;
     [Space(10)]
     [Header("Game Settings")]
     [Header("General Settings")]
+    public bool developerMode; // if true, does not end the game on errors
+    public bool hideMessages; // if true, hides all UI messages
     public int maxYellowCards; // maximum number of yellow cards a team can receive before losing the round
+    [SerializeField] private int pointsToWin; // number of points a team needs to win the game
     [Header("Commands Settings")]
     [SerializeField] int command1UnitCount; // number of units in command 1
     [SerializeField] Gradient command1Color; // color of command 1
@@ -56,6 +61,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private Gradient mapColor; // color of the map elements
     [Header("Zone Settings")]
     [SerializeField] private float START_ZONE_SIZE; // initial value of the zone
+    [SerializeField] private float ZONE_START_DELAY; // how long the zone will stay the same size before starting to shrink, used to give players time to spread out
     [SerializeField] private float ZONE_GROWTH_RATE; // how much the zone will grow each second, used to make the game more dynamic and force players to move towards the center of the map
     public float ZONE_DAMAGE; // how much damage the zone will deal to the units each second, used to make the game more dynamic and force players to move towards the center of the map
     [Header("Unit Settings")]
@@ -64,7 +70,8 @@ public class GameManager : MonoBehaviour
     public float UNIT_ROTATION_SPEED; // speed of the unit rotation
     public int ENEMY_POINT_PRECISION; // maximum points to test between enemy center and side
     public float SHOOTING_DAMAGE; // damage dealt by the unit when it shoots
-    public float SHOOTING_ACCURACY; // accuracy of the shooting, how much the bullet can deviate from the center of the unit in a random direction
+    public float SHOOTING_RECOIL; // accuracy of the shooting, how much the bullet can deviate from the center of the unit in a random direction
+    public float SHOOTING_RECOIL_WHEN_MOVING; // accuracy of the shooting when the unit is moving, how much the bullet can deviate from the center of the unit in a random direction
     public float SHOOTING_COOLDOWN; // time between shots in seconds
     
     [HideInInspector]
@@ -87,39 +94,98 @@ public class GameManager : MonoBehaviour
     private GameObject particleParent;
     private GameObject mapParent;
     private GameObject zoneGameObject;
-    private GameObject command1Parent;
-    private GameObject command2Parent;
 
+    // Game States
+    int round = 0;
+    string scoreText { get
+        {
+            string text = "";
+            foreach (var team in teams.Values)
+            {
+                text += $"{team.points} : ";
+            }
+            text = text.Remove(text.Length - 3); // remove the last " : "
+            return text;
+        }
+    }
     bool gameStarted = false;
     bool gamePaused = false;
     [HideInInspector]
     public bool gameEnded = false;
+    private float zoneStartTime;
+
+    // Teams
+    public Dictionary<int, Team> teams = new Dictionary<int, Team>();
 
     public void CheckForWin()
     {
-        if (unitManager.TryGetWinningTeam(out int winningTeamId))
+        if (unitManager.TryGetWinningTeam(out int teamId, out bool restart))
         {
-            if (winningTeamId == -1)
-                Debug.Log("The game ended in a draw!");
-            else
-                Debug.Log($"Team {winningTeamId} has won the game!");
+            if (restart)
+            {
+                uiManager.SetMessage($"First red card of team {teams[teamId].teamName}!\nPress R to restart the round.");
+                gameEnded = true;
+                return;
+            }
+
+            if (teamId == -1)
+            {
+                uiManager.SetMessage("The game ended in a draw!");
+                gameEnded = true;
+                return;
+            }
+            
+            Team winnerTeam = teams[teamId];
+            winnerTeam.points++;
+
+            if (winnerTeam.points >= pointsToWin && !developerMode)
+            {
+                uiManager.SetMessage($"Team {teams[teamId].teamName} has won the game\n\n{scoreText}");
+            }
+            else // start a new round
+            {
+                uiManager.SetMessage($"Team {teams[teamId].teamName} has won the round!\n\n{scoreText}\n\nPress R to start a new round.");
+            }
 
             gameEnded = true;
         }
     }
 
-    private void OnValidate()
-    {
-        DebugVariables.testInt1 = debugInt1;
-        DebugVariables.testInt2 = debugInt2;
-        DebugVariables.testFloat1 = debugFloat1;
-        DebugVariables.testFloat2 = debugFloat2;
-        DebugVariables.test1 = test1;
-        DebugVariables.test2 = test2;
-    }
-
     void Start()
     {
+        if (TeamSelection.teams.Count < 2)
+        {
+            Debug.LogError("Not enough teams selected! Please select at least 2 teams.");
+            return;
+        }
+        if(TeamSelection.teamNames.Count < 2)
+        {
+            Debug.LogError("Not enough team names selected! Please select at least 2 team names.");
+            return;
+        }
+
+        teams[1] = new Team()
+        {
+            teamId = 1,
+            teamName = TeamSelection.teamNames[0],
+            unitType = TeamSelection.teams[0].Item1,
+            commandType = TeamSelection.teams[0].Item2,
+            teamColor = command1Color,
+            spawnPoint = new Vector2(0, MAP_SIZE * 0.85f),
+            unitCount = command1UnitCount
+        };
+
+        teams[2] = new Team()
+        {
+            teamId = 2,
+            teamName = TeamSelection.teamNames[1],
+            unitType = TeamSelection.teams[1].Item1,
+            commandType = TeamSelection.teams[1].Item2,
+            teamColor = command2Color,
+            spawnPoint = new Vector2(0, -MAP_SIZE * 0.85f),
+            unitCount = command2UnitCount
+        };
+
         InitializeNewGame();
     }
     private void TogglePauseGame()
@@ -160,16 +226,21 @@ public class GameManager : MonoBehaviour
         if (!particleParent.IsDestroyed()) Destroy(particleParent);
         if (!mapParent.IsDestroyed()) Destroy(mapParent);
         if (!zoneGameObject.IsDestroyed()) Destroy(zoneGameObject);
-        if (!command1Parent.IsDestroyed()) Destroy(command1Parent);
-        if (!command2Parent.IsDestroyed()) Destroy(command2Parent);
+        foreach (Team team in teams.Values)
+        {
+            foreach (Transform child in team.parentGameObject.transform)
+            {
+                GameObject.Destroy(child.gameObject);
+            }
+        }
 
         particleParent = new GameObject("Particles");
         mapParent = new GameObject("Map");
         zoneGameObject = Instantiate(zonePrefab, new Vector3(0f, 0f, -9f), Quaternion.Euler(-90, 0, 0));
         zoneGameObject.transform.localScale = new Vector3(MAP_SIZE * 0.5f, 1, MAP_SIZE * 0.5f);
 
-        uiManager = new UIManager(uiDocument, maxYellowCards);
-        unitManager = new UnitManager(this, uiManager, particleParent.transform);
+        uiManager = new UIManager(uiDocument, maxYellowCards, this);
+        unitManager = new UnitManager(this, uiManager, particleParent.transform, audioManager, shootSounds);
         cameraManager = new CameraManager(unitManager, Camera.main, MAP_SIZE);
         mapGenerator = new MapGenerator(unlitMaterial);
 
@@ -177,51 +248,65 @@ public class GameManager : MonoBehaviour
         gameMap = data.Item1; //get the game map
         gameMapData = data.Item2; //get the game map data
 
-        CreateCommand<CustomUnit1, CustomCommand1>(1, unitPrefab, command1UnitCount, gameMap, new Vector2(0, MAP_SIZE / 2f + 5f), command1Color, ref command1Parent);
-        CreateCommand<CustomUnit2, CustomCommand2>(2, unitPrefab, command2UnitCount, gameMap, new Vector2(0, -MAP_SIZE / 2f - 5f), command2Color, ref command2Parent);
-        
+        foreach(Team team in teams.Values)
+        {
+            var method = typeof(GameManager).GetMethod("CreateCommand", BindingFlags.NonPublic | BindingFlags.Instance);
+            var genericMethod = method.MakeGenericMethod(team.unitType, team.commandType);
+            genericMethod.Invoke(this, new object[] { team, unitPrefab, gameMap });
+        }
+
         zoneSize = START_ZONE_SIZE; //set the initial zone size
         zoneMaterial.SetFloat("_ZoneSize", zoneSize);
+
+        round++;
+        uiManager.SetMessage($"Round {round}");
     }
     private void StartGame()
     {
         unitManager.StartCommands();
         gameStarted = true;
+        uiManager.SetMessage("");
+        zoneStartTime = Time.time + ZONE_START_DELAY; //set the time when the zone will start shrinking
     }
     private void UpdateGame()
     {
-        zoneSize -= ZONE_GROWTH_RATE * Time.deltaTime; //reduce the zone size
-        zoneMaterial.SetFloat("_ZoneSize", zoneSize);
+        if (zoneStartTime < Time.time)
+        {
+            zoneSize -= ZONE_GROWTH_RATE * Time.deltaTime; //reduce the zone size
+            zoneMaterial.SetFloat("_ZoneSize", zoneSize);
+        }
 
         unitManager.UpdateCommands();
 
         if(gameEnded) return; //skip the rest of the update if the game has ended after updating the commands
 
         unitManager.RemoveDeadUnits();
-        CheckForWin();// check for winning team and end the game
+        CheckForWin(); // check for winning team and end the game
     }
-    private void CreateCommand<CustomUnit, CustomCommand>(int teamId, GameObject unitPrefab, int numberOfUnits, GameMap map, Vector2 spawnLocation, Gradient teamColor, ref GameObject parent)
+    private void CreateCommand<CustomUnit, CustomCommand>(Team team, GameObject unitPrefab, GameMap map)
         where CustomUnit : Unit<CustomUnit>
         where CustomCommand : Command<CustomUnit>, ICommand
     {
+        int teamId = team.teamId;
+        int numberOfUnits = team.unitCount;
+        Vector2 spawnLocation = team.spawnPoint;
+
         //create command
         CustomCommand command = (CustomCommand)Activator.CreateInstance(typeof(CustomCommand));
         command.gameMap = new GameMap(map); //give a copy of the map to the command
         command.gameSettings = GetGameSettings(); //give a copy of the game settings to the command
         CommandData commandData = new CommandData(teamId);
 
-        parent = new GameObject("Command" + teamId);
-
         uiManager.CreateTeamContainer(teamId);
 
         //create units
         for (int unitId = 0; unitId < numberOfUnits; unitId++)
         {
-            Color unitColor = teamColor.Evaluate((float)unitId / numberOfUnits);
+            Color unitColor = team.teamColor.Evaluate((float)unitId / numberOfUnits);
             Vector2 directionToCenter = (Vector2.zero - spawnLocation).normalized;
             Vector2 spawnPosition = spawnLocation + (new Vector2(spawnLocation.y, -spawnLocation.x) * unitId/100f);
             
-            GameObject gameObject = Instantiate(unitPrefab, spawnPosition, Quaternion.Euler(0, 0, Mathf.Atan2(directionToCenter.y, directionToCenter.x) * Mathf.Rad2Deg), parent.transform);
+            GameObject gameObject = Instantiate(unitPrefab, spawnPosition, Quaternion.Euler(0, 0, Mathf.Atan2(directionToCenter.y, directionToCenter.x) * Mathf.Rad2Deg), team.parentGameObject.transform);
             gameObject.name = $"Unit({unitId})Team({teamId})";
 
             Rigidbody2D rigidbody = gameObject.AddComponent<Rigidbody2D>();
@@ -274,7 +359,8 @@ public class GameManager : MonoBehaviour
             UNIT_MOVE_SPEED = UNIT_MOVE_SPEED,
             UNIT_ROTATION_SPEED = UNIT_ROTATION_SPEED,
             SHOOTING_DAMAGE = SHOOTING_DAMAGE,
-            SHOOTING_ACCURACY = SHOOTING_ACCURACY,
+            SHOOTING_RECOIL = SHOOTING_RECOIL,
+            SHOOTING_RECOIL_WHEN_MOVING = SHOOTING_RECOIL_WHEN_MOVING,
             SHOOTING_COOLDOWN = SHOOTING_COOLDOWN,
             UNIT_SIZE = UNIT_SIZE
         };

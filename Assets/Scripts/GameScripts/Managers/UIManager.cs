@@ -1,9 +1,11 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
 
 public class UIManager
 {
+    GameManager gameManager;
     Gradient healthGradient = new Gradient
     {
         colorKeys = new GradientColorKey[]
@@ -25,9 +27,11 @@ public class UIManager
     Dictionary<int, VisualElement> yellowCardContainers;
 
     VisualElement mainContainer;
+    Label message;
 
-    public UIManager(UIDocument document, int maxYellowCards)
+    public UIManager(UIDocument document, int maxYellowCards, GameManager gameManager)
     {
+        this.gameManager = gameManager;
         yellowCardContainers = new Dictionary<int, VisualElement>();
         unitContainers = new Dictionary<int, VisualElement>();
         healthBarMap = new Dictionary<int, Dictionary<int, VisualElement>>();
@@ -37,11 +41,20 @@ public class UIManager
         VisualElement root = document.rootVisualElement;
         root.Clear();
 
+        message = new Label("");
+        message.AddToClassList("messageLabel");
+        root.Add(message);
+
         mainContainer = new VisualElement();
         mainContainer.AddToClassList("mainContainer");
         root.Add(mainContainer);
     }
 
+    public void SetMessage(string text)
+    {
+        if (gameManager.hideMessages) return;
+        message.text = text;
+    }
     public void AddYellowCard(int teamId, string cardText, bool redCard)
     {
         var yellowCard = new VisualElement();

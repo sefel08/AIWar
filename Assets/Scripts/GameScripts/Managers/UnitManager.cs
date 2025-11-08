@@ -16,17 +16,19 @@ public class UnitManager
     //game variables
     public readonly float UNIT_SIZE;
 
-    //constants
-    private const float PROJECTILE_DISTANCE = 120f; // distance the projectile will travel if it doesn't hit anything
-
+    //pools
     GameObjectPool<ProjectileScript> projectilePool; // pool for projectiles to reuse them instead of creating new ones
     ParticlePool hitParticlePool;
     ParticlePool bloodParticlePool;
 
+    //managers
     GameManager gameManager;
     UIManager uiManager;
+    AudioSource audioManager;
 
-    public UnitManager(GameManager gameManager, UIManager uiManager, Transform particleParent)
+    List<AudioClip> shootSounds;
+
+    public UnitManager(GameManager gameManager, UIManager uiManager, Transform particleParent, AudioSource audioManager, List<AudioClip> shootSounds)
     {
         commands = new();
         gameObjectUnitDataDictionary = new();
@@ -34,6 +36,8 @@ public class UnitManager
 
         this.gameManager = gameManager;
         this.uiManager = uiManager;
+        this.audioManager = audioManager;
+        this.shootSounds = shootSounds;
 
         projectilePool = new GameObjectPool<ProjectileScript>(particleParent, "Projectiles", gameManager.projectilePrefab, true);
         hitParticlePool = new ParticlePool(particleParent, "HitParticles", gameManager.hitPrefab);
@@ -57,7 +61,7 @@ public class UnitManager
         foreach (var pair in commands.Values)
         {
             CommandData commandData = pair.Item2;
-            SafelyRunCommandMethod(pair.Item1.Start, commandData);
+            SafelyRunCommandMethod(pair.Item1.Start, commandData, pair.Item1.OnRedCard);
         }
     }
     public void UpdateCommands()
@@ -79,7 +83,16 @@ public class UnitManager
                     DamageUnit(unitData, gameManager.ZONE_DAMAGE * Time.deltaTime);
             }
 
-            SafelyRunCommandMethod(pair.Item1.Update, commandData);
+            if (gameManager.developerMode) 
+                pair.Item1.Update(); //in developer mode, run the update without try-catch to see the errors
+            else
+                SafelyRunCommandMethod(pair.Item1.Update, commandData, pair.Item1.OnRedCard);
+
+            foreach (UnitData unitData in commandData.unitDataList.Values)
+            {
+                if(unitData.hasMoved) unitData.isMoving = true;
+                else unitData.isMoving = false;
+            }
         }
     }
     public void RemoveDeadUnits()
@@ -115,9 +128,10 @@ public class UnitManager
     /// </summary>
     /// <param name="teamId"></param>
     /// <returns></returns>
-    public bool TryGetWinningTeam(out int teamId)
+    public bool TryGetWinningTeam(out int teamId, out bool restart)
     {
         teamId = -2; // -2 means game is not over yet
+        restart = false; // if it was first red card of command, restart the round
 
         // check if game is over (only one team left)
         List<CommandData> aliveCommands = new List<CommandData>();
@@ -126,7 +140,17 @@ public class UnitManager
         {
             CommandData commandData = pair.Item2;
             if (commandData.unitDataList.Count > 0 && commandData.yellowCardCount <= gameManager.maxYellowCards) aliveCommands.Add(commandData);
-            else deadCommands.Add(commandData);
+            else
+            {
+                Team team = gameManager.teams[commandData.teamId];
+                if (commandData.yellowCardCount > gameManager.maxYellowCards && team.hasRedCard == false)
+                {
+                    team.hasRedCard = true;
+                    teamId = team.teamId;
+                    restart = true;
+                }
+                deadCommands.Add(commandData);
+            }
         }
 
         if (aliveCommands.Count > 0 && deadCommands.Count > 0)
@@ -154,7 +178,7 @@ public class UnitManager
     /// allowed, the team is disqualified, and the game state is checked for a potential win condition.</remarks>
     /// <param name="method">The <see cref="Action"/> representing the command to execute.</param>
     /// <param name="commandData">The data associated with the command, including its team identifier and penalty tracking.</param>
-    private void SafelyRunCommandMethod(Action method, CommandData commandData)
+    private void SafelyRunCommandMethod(Action method, CommandData commandData, Action redCardEvent)
     {
         try
         {
@@ -170,10 +194,21 @@ public class UnitManager
             else
             {
                 uiManager.AddYellowCard(commandData.teamId, "Disqualified", true);
-                Debug.Log($"Command {commandData.teamId} has been disqualified for receiving {commandData.yellowCardCount} yellow cards.");
+                Debug.Log($"Command {commandData.teamId} has lost the round for receiving {commandData.yellowCardCount} yellow cards.");
+                try
+                {
+                    redCardEvent();
+                }catch (Exception redCardExeption)
+                {
+                    Debug.Log($"Error in OnRedCard of command {commandData.teamId}. " + redCardExeption.Message);
+                }
                 gameManager.CheckForWin();
             }
         }
+    }
+    private void PlaySootSound()
+    {
+        audioManager.PlayOneShot(shootSounds[Random.Range(0, shootSounds.Count)]);
     }
 
     // Unit methods
@@ -216,6 +251,14 @@ public class UnitManager
     public bool IsUnitAlive(IUnit unit)
     {
         return commands[unit.TeamId].Item2.unitDataList.TryGetValue(unit.UnitId, out UnitData data);
+    }
+    public bool CanUnitShoot(IUnit unit)
+    {
+        return GetUnitData(unit).canShoot;
+    }
+    public float GetUnitShootCooldown(IUnit unit)
+    {
+        return GetUnitData(unit).shootCooldown;
     }
 
     // Actions for Unit class
@@ -317,10 +360,10 @@ public class UnitManager
         {
             foreach (var enemy in commandData.unitDataList.Values)
             {
-                Vector2? enemyPosition = GetVisibleEnemyPoint(enemy, enemy.gameObject);
-                if (enemyPosition.HasValue) // check if the enemy is visible
+                Vector2? enemyBestShootingPosition = GetVisibleEnemyPoint(enemy, enemy.gameObject, out float coneAngle);
+                if (enemyBestShootingPosition.HasValue) // check if the enemy is visible
                 {
-                    EnemyData enemyData = new EnemyData(enemy, enemyPosition.Value);
+                    EnemyData enemyData = new EnemyData(enemy, enemyBestShootingPosition.Value, coneAngle);
                     enemiesInSight.Add(enemyData);
                 }
             }
@@ -329,8 +372,9 @@ public class UnitManager
         return enemiesInSight;
 
 
-        Vector2? GetVisibleEnemyPoint(UnitData enemyData, GameObject enemyGameObject)
+        Vector2? GetVisibleEnemyPoint(UnitData enemyData, GameObject enemyGameObject, out float coneAngle)
         {
+            coneAngle = 0f;
             Vector2 unitPosition = unitData.Position;
             Vector2 enemyPosition = enemyData.Position;
             Vector2 direction = (enemyPosition - unitPosition).normalized;
@@ -400,6 +444,7 @@ public class UnitManager
             if (gameManager.showEnemiesInSightBestShootingPoint)
                 Debug.DrawLine(unitPosition, (leftPoint + rightPoint) / 2, Color.red);
 
+            coneAngle = Vector2.Angle(leftPoint - unitPosition, rightPoint - unitPosition);
             return (leftPoint + rightPoint) / 2; //return avarage of both points as the best shooting position
 
             Vector2 GetPointCloserToCenter(Vector2 startPoint)
@@ -472,7 +517,8 @@ public class UnitManager
 
         Vector2 direction = (unitRotation * Vector2.right).normalized;
         Vector2 startPosition = unitPosition + direction * (UNIT_SIZE + 0.01f);
-        Vector2 directionWithOffset = (unitRotation * new Vector2(1, Random.Range(-gameManager.SHOOTING_ACCURACY, gameManager.SHOOTING_ACCURACY))).normalized;
+        float recoil = (unitData.isMoving) ? gameManager.SHOOTING_RECOIL_WHEN_MOVING : gameManager.SHOOTING_RECOIL;
+        Vector2 directionWithOffset = (unitRotation * new Vector2(1, Random.Range(-recoil, recoil))).normalized;
         RaycastHit2D hit = Physics2D.Raycast(startPosition, directionWithOffset);
 
         //debug
@@ -484,6 +530,9 @@ public class UnitManager
         GameObject projectile = projectilePoolObject.gameObject;
         projectile.gameObject.transform.rotation = Quaternion.Euler(0, 0, Mathf.Atan2(directionWithOffset.y, directionWithOffset.x) * Mathf.Rad2Deg);
         ProjectileScript projectileScript = projectilePoolObject.component;
+
+        //play shoot sound
+        PlaySootSound();
 
         if (hit.collider != null)
         {
@@ -511,7 +560,7 @@ public class UnitManager
         }
 
         // Init the projectile script with the start position and a point far away in the direction of the ray
-        projectileScript.Init(startPosition + direction * 2f, startPosition + directionWithOffset * PROJECTILE_DISTANCE, projectilePoolObject.ReturnObject);
+        projectileScript.Init(startPosition + direction * 2f, startPosition + directionWithOffset * gameManager.MAP_SIZE * 1.5f, projectilePoolObject.ReturnObject);
     }
     public (HitType, HitData) CastARay(IUnit unit, Vector2 direction)
     {

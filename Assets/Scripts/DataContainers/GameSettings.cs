@@ -12,7 +12,8 @@ public class GameSettings
     public float UNIT_MOVE_SPEED; // speed of the unit movement
     public float UNIT_ROTATION_SPEED; // speed of the unit rotation
     public float SHOOTING_DAMAGE; // damage dealt by the unit when it shoots
-    public float SHOOTING_ACCURACY; // accuracy of the shooting, how much the bullet can deviate from the center of the unit in a random direction
+    public float SHOOTING_RECOIL; // accuracy of the shooting, how much the bullet can deviate from the center of the unit in a random direction
+    public float SHOOTING_RECOIL_WHEN_MOVING; // accuracy of the shooting when the unit is moving, how much the bullet can deviate from the center of the unit in a random direction
     public float SHOOTING_COOLDOWN; // time between shots in seconds
     public float UNIT_SIZE; // half of the unit size, used for raycasting
 }

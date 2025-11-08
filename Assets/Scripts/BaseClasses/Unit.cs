@@ -66,6 +66,14 @@ public class Unit<TUnit> : IUnit
     /// Returns true if the unit is alive, false otherwise.
     /// </summary>
     public bool IsAlive { get { return unitManager.IsUnitAlive(this); } }
+    /// <summary>
+    /// Returns true if the unit can shoot this turn.
+    /// </summary>
+    public bool CanShoot { get { return unitManager.CanUnitShoot(this); } }
+    /// <summary>
+    /// Returns the shoot cooldown of the unit in seconds.
+    /// </summary>
+    public float ShootCooldown { get { return unitManager.GetUnitShootCooldown(this); } }
 
     /// <summary>
     /// Function that is called when unit dies.
