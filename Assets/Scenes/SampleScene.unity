@@ -855,9 +855,9 @@ MonoBehaviour:
   showEnemiesInSightBounds: 0
   showEnemiesInSightBestShootingPoint: 0
   showShootingRays: 0
-  showUnitRays: 1
+  showUnitRays: 0
   unitRayDuration: 0
-  shootingRayDuration: 0.3
+  shootingRayDuration: 0.1
   unitPrefab: {fileID: 3289567134752518329, guid: 595ef0bb464318442a37e2f45142c49e, type: 3}
   projectilePrefab: {fileID: 1719752039792640895, guid: 8351cfe27a80f2f4fbd39d7ac4db4c8c, type: 3}
   hitPrefab: {fileID: 5134019727519298163, guid: 149dac13a62277b4baff7b74a054cd6d, type: 3}
