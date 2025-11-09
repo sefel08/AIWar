@@ -92,7 +92,6 @@
     height: 85%;
     font-size: 100px;
     -unity-text-align: middle-center;
-    -unity-font-definition: url("project://database/Assets/UI%20Toolkit/UnityThemes/UnityDefaultRuntimeTheme.tss?fileID=2230732570650464555&guid=00461c2f8c57151459a72e536fe1f270&type=3#NotInter-Regular");
     color: rgb(255, 255, 255);
     -unity-text-outline-width: 3px;
     -unity-text-outline-color: rgb(0, 0, 0);
