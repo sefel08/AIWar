@@ -61,7 +61,10 @@ public class UnitManager
         foreach (var pair in commands.Values)
         {
             CommandData commandData = pair.Item2;
-            SafelyRunCommandMethod(pair.Item1.Start, commandData, pair.Item1.OnRedCard);
+            if(gameManager.developerMode) 
+                pair.Item1.Start(); //in developer mode, run the start without try-catch to see the errors
+            else
+                SafelyRunCommandMethod(pair.Item1.Start, commandData, pair.Item1.OnRedCard);
         }
     }
     public void UpdateCommands()
